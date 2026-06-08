@@ -1,0 +1,2 @@
+../Core/Src/Tasks/printer.c:10:5:queuedPrintf	160	static
+../Core/Src/Tasks/printer.c:49:6:printer	152	static

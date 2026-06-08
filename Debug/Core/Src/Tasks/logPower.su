@@ -1,0 +1,4 @@
+../Core/Src/Tasks/logPower.c:15:6:ina230write	48	static
+../Core/Src/Tasks/logPower.c:24:10:ina230read	48	static
+../Core/Src/Tasks/logPower.c:46:6:setUpPowerSensors	64	static
+../Core/Src/Tasks/logPower.c:53:6:logPower	120	static
