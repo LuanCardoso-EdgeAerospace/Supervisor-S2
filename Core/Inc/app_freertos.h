@@ -56,6 +56,9 @@ extern "C" {
 /* USER CODE END EM */
 extern osThreadId_t defaultTaskHandle;
 extern osThreadId_t LEDBlinkHandle;
+extern osThreadId_t printerHandle;
+extern osThreadId_t powerUpHandle;
+extern osMessageQueueId_t printQueueHandle;
 
 /* Exported function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -64,6 +67,8 @@ extern osThreadId_t LEDBlinkHandle;
 
 void StartDefaultTask(void *argument);
 void LEDBlink(void *argument);
+void printer(void *argument);
+void powerUp(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 

@@ -58,6 +58,25 @@ const osThreadAttr_t LEDBlink_attributes = {
   .priority = (osPriority_t) osPriorityLow,
   .stack_size = 128 * 4
 };
+/* Definitions for printer */
+osThreadId_t printerHandle;
+const osThreadAttr_t printer_attributes = {
+  .name = "printer",
+  .priority = (osPriority_t) osPriorityLow,
+  .stack_size = 512 * 4
+};
+/* Definitions for powerUp */
+osThreadId_t powerUpHandle;
+const osThreadAttr_t powerUp_attributes = {
+  .name = "powerUp",
+  .priority = (osPriority_t) osPriorityAboveNormal,
+  .stack_size = 128 * 4
+};
+/* Definitions for printQueue */
+osMessageQueueId_t printQueueHandle;
+const osMessageQueueAttr_t printQueue_attributes = {
+  .name = "printQueue"
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -85,6 +104,8 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_TIMERS */
   /* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
+  /* creation of printQueue */
+  printQueueHandle = osMessageQueueNew (16, 128, &printQueue_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
@@ -94,6 +115,12 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of LEDBlink */
   LEDBlinkHandle = osThreadNew(LEDBlink, NULL, &LEDBlink_attributes);
+
+  /* creation of printer */
+  printerHandle = osThreadNew(printer, NULL, &printer_attributes);
+
+  /* creation of powerUp */
+  powerUpHandle = osThreadNew(powerUp, NULL, &powerUp_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -138,6 +165,42 @@ __weak void LEDBlink(void *argument)
     osDelay(1);
   }
   /* USER CODE END LEDBlink */
+}
+
+/* USER CODE BEGIN Header_printer */
+/**
+* @brief Function implementing the printer thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_printer */
+__weak void printer(void *argument)
+{
+  /* USER CODE BEGIN printer */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END printer */
+}
+
+/* USER CODE BEGIN Header_powerUp */
+/**
+* @brief Function implementing the powerUp thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_powerUp */
+__weak void powerUp(void *argument)
+{
+  /* USER CODE BEGIN powerUp */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END powerUp */
 }
 
 /* Private application code --------------------------------------------------*/

@@ -65,8 +65,23 @@ void Error_Handler(void);
 #define LEDGRN_GPIO_Port GPIOE
 #define LEDRED_Pin GPIO_PIN_9
 #define LEDRED_GPIO_Port GPIOE
+#define EN_12V0P_Pin GPIO_PIN_8
+#define EN_12V0P_GPIO_Port GPIOD
+#define PG_12V_PS_Pin GPIO_PIN_9
+#define PG_12V_PS_GPIO_Port GPIOD
+#define PMIC_EN_Pin GPIO_PIN_11
+#define PMIC_EN_GPIO_Port GPIOD
+#define PUSH_BUTTON_Pin GPIO_PIN_11
+#define PUSH_BUTTON_GPIO_Port GPIOC
+#define PUSH_BUTTON_EXTI_IRQn EXTI4_15_IRQn
 #define MCU_RS422_EN_Pin GPIO_PIN_3
 #define MCU_RS422_EN_GPIO_Port GPIOD
+#define LCL_1_EN_Pin GPIO_PIN_4
+#define LCL_1_EN_GPIO_Port GPIOB
+#define LCL_2_Pin GPIO_PIN_5
+#define LCL_2_GPIO_Port GPIOB
+#define LCL_4_Pin GPIO_PIN_7
+#define LCL_4_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 
