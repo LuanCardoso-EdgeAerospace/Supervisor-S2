@@ -55,16 +55,7 @@ extern "C" {
 
 /* USER CODE END EM */
 extern osThreadId_t defaultTaskHandle;
-extern osThreadId_t powerUpHandle;
-extern osThreadId_t serviceWatchdogHandle;
-extern osThreadId_t logPowerHandle;
-extern osThreadId_t logTempHandle;
-extern osThreadId_t powerAlertServiceHandle;
-extern osThreadId_t ledManagerHandle;
-extern osThreadId_t printerHandle;
-extern osMutexId_t powerLogMutexHandle;
-extern osMutexId_t tempLogMutexHandle;
-extern osMessageQueueId_t printQueueHandle;
+extern osThreadId_t LEDBlinkHandle;
 
 /* Exported function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -72,19 +63,10 @@ extern osMessageQueueId_t printQueueHandle;
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
-extern void powerUp(void *argument);
-extern void serviceWatchdog(void *argument);
-extern void logPower(void *argument);
-extern void logTemp(void *argument);
-extern void powerAlertService(void *argument);
-extern void ledManager(void *argument);
-extern void printer(void *argument);
+void LEDBlink(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
-/* Hook prototypes */
-void configureTimerForRunTimeStats(void);
-unsigned long getRunTimeCounterValue(void);
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
 
