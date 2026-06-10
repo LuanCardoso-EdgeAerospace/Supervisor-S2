@@ -69,8 +69,27 @@ const osThreadAttr_t printer_attributes = {
 osThreadId_t powerUpHandle;
 const osThreadAttr_t powerUp_attributes = {
   .name = "powerUp",
-  .priority = (osPriority_t) osPriorityAboveNormal,
+  .priority = (osPriority_t) osPriorityHigh,
+  .stack_size = 256 * 4
+};
+/* Definitions for serviceWatchdog */
+osThreadId_t serviceWatchdogHandle;
+const osThreadAttr_t serviceWatchdog_attributes = {
+  .name = "serviceWatchdog",
+  .priority = (osPriority_t) osPriorityRealtime,
   .stack_size = 128 * 4
+};
+/* Definitions for logPower */
+osThreadId_t logPowerHandle;
+const osThreadAttr_t logPower_attributes = {
+  .name = "logPower",
+  .priority = (osPriority_t) osPriorityNormal,
+  .stack_size = 128 * 4
+};
+/* Definitions for powerLogMutex */
+osMutexId_t powerLogMutexHandle;
+const osMutexAttr_t powerLogMutex_attributes = {
+  .name = "powerLogMutex"
 };
 /* Definitions for printQueue */
 osMessageQueueId_t printQueueHandle;
@@ -92,6 +111,8 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
+  /* creation of powerLogMutex */
+  powerLogMutexHandle = osMutexNew(&powerLogMutex_attributes);
 
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
@@ -121,6 +142,12 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of powerUp */
   powerUpHandle = osThreadNew(powerUp, NULL, &powerUp_attributes);
+
+  /* creation of serviceWatchdog */
+  serviceWatchdogHandle = osThreadNew(serviceWatchdog, NULL, &serviceWatchdog_attributes);
+
+  /* creation of logPower */
+  logPowerHandle = osThreadNew(logPower, NULL, &logPower_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -201,6 +228,42 @@ __weak void powerUp(void *argument)
     osDelay(1);
   }
   /* USER CODE END powerUp */
+}
+
+/* USER CODE BEGIN Header_serviceWatchdog */
+/**
+* @brief Function implementing the serviceWatchdog thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_serviceWatchdog */
+__weak void serviceWatchdog(void *argument)
+{
+  /* USER CODE BEGIN serviceWatchdog */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1000);
+  }
+  /* USER CODE END serviceWatchdog */
+}
+
+/* USER CODE BEGIN Header_logPower */
+/**
+* @brief Function implementing the logPower thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_logPower */
+__weak void logPower(void *argument)
+{
+  /* USER CODE BEGIN logPower */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END logPower */
 }
 
 /* Private application code --------------------------------------------------*/

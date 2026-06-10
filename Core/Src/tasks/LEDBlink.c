@@ -5,15 +5,12 @@
 
 void LEDBlink(void *argument)
 {
-  /* USER CODE BEGIN LEDBlink */
-  /* Infinite loop */
 
+  uint32_t tick = osKernelGetTickCount();
   for(;;)
   {
     HAL_GPIO_TogglePin(LEDGRN_GPIO_Port, LEDGRN_Pin);
-    osDelay(500);
-    HAL_GPIO_TogglePin(LEDRED_GPIO_Port, LEDRED_Pin);
-    osDelay(500);
+    osDelayUntil(tick+=250);
   }
   /* USER CODE END LEDBlink */
 }

@@ -58,6 +58,9 @@ extern osThreadId_t defaultTaskHandle;
 extern osThreadId_t LEDBlinkHandle;
 extern osThreadId_t printerHandle;
 extern osThreadId_t powerUpHandle;
+extern osThreadId_t serviceWatchdogHandle;
+extern osThreadId_t logPowerHandle;
+extern osMutexId_t powerLogMutexHandle;
 extern osMessageQueueId_t printQueueHandle;
 
 /* Exported function prototypes -----------------------------------------------*/
@@ -69,6 +72,8 @@ void StartDefaultTask(void *argument);
 void LEDBlink(void *argument);
 void printer(void *argument);
 void powerUp(void *argument);
+void serviceWatchdog(void *argument);
+void logPower(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 

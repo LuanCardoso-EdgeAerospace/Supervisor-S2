@@ -4,7 +4,8 @@ Changes requested for the supervisor
 UART
 ----
 
-1. Signal `MCU_RS422_EN` is used to enable the transmission on the RS422 converter. Not needed.
+1. Signal `MCU_RS422_EN` is used to enable the transmission on the RS422 converter.
+	Current implementation
 2. Flow control signals (RTS CTS) would be usefull for communication with the CPU.
 
 
