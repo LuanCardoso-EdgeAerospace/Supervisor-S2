@@ -42,10 +42,12 @@
 
 /* Private variables ---------------------------------------------------------*/
 
+I2C_HandleTypeDef hi2c1;
 I2C_HandleTypeDef hi2c2;
 I2C_HandleTypeDef hi2c3;
 
 UART_HandleTypeDef hlpuart1;
+UART_HandleTypeDef hlpuart2;
 
 /* USER CODE BEGIN PV */
 
@@ -58,6 +60,8 @@ static void MX_GPIO_Init(void);
 static void MX_LPUART1_UART_Init(void);
 static void MX_I2C2_Init(void);
 static void MX_I2C3_Init(void);
+static void MX_LPUART2_UART_Init(void);
+static void MX_I2C1_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -68,6 +72,8 @@ extern const char banner[];
 extern const uint16_t banner_len;
 extern const char compileInfo[];
 extern const uint16_t compileInfo_len;
+
+void testINA(void);
 /* USER CODE END 0 */
 
 /**
@@ -101,6 +107,8 @@ int main(void)
   MX_LPUART1_UART_Init();
   MX_I2C2_Init();
   MX_I2C3_Init();
+  MX_LPUART2_UART_Init();
+  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
 
 //  HAL_GPIO_WritePin(GPA_GPIO_Port, GPA_Pin, GPIO_PIN_SET);
@@ -125,6 +133,10 @@ int main(void)
                     200);
   HAL_GPIO_WritePin(MCU_RS422_EN_GPIO_Port, MCU_RS422_EN_Pin, GPIO_PIN_RESET);
 
+  //Pin is open drain, this sets it to hiZ
+  HAL_GPIO_WritePin(MCU_WATCHDOG_PULSE_GPIO_Port,
+                     MCU_WATCHDOG_PULSE_Pin, GPIO_PIN_SET);
+//  testINA();
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -188,6 +200,54 @@ void SystemClock_Config(void)
 }
 
 /**
+  * @brief I2C1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_I2C1_Init(void)
+{
+
+  /* USER CODE BEGIN I2C1_Init 0 */
+
+  /* USER CODE END I2C1_Init 0 */
+
+  /* USER CODE BEGIN I2C1_Init 1 */
+
+  /* USER CODE END I2C1_Init 1 */
+  hi2c1.Instance = I2C1;
+  hi2c1.Init.Timing = 0x00303D5B;
+  hi2c1.Init.OwnAddress1 = 0;
+  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c1.Init.OwnAddress2 = 0;
+  hi2c1.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Analogue filter
+  */
+  if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Digital filter
+  */
+  if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN I2C1_Init 2 */
+
+  /* USER CODE END I2C1_Init 2 */
+
+}
+
+/**
   * @brief I2C2 Initialization Function
   * @param None
   * @retval None
@@ -203,7 +263,7 @@ static void MX_I2C2_Init(void)
 
   /* USER CODE END I2C2_Init 1 */
   hi2c2.Instance = I2C2;
-  hi2c2.Init.Timing = 0x00000000;
+  hi2c2.Init.Timing = 0x00303D5B;
   hi2c2.Init.OwnAddress1 = 0;
   hi2c2.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c2.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
@@ -251,7 +311,7 @@ static void MX_I2C3_Init(void)
 
   /* USER CODE END I2C3_Init 1 */
   hi2c3.Instance = I2C3;
-  hi2c3.Init.Timing = 0x00000000;
+  hi2c3.Init.Timing = 0x00303D5B;
   hi2c3.Init.OwnAddress1 = 0;
   hi2c3.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c3.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
@@ -331,6 +391,53 @@ static void MX_LPUART1_UART_Init(void)
 }
 
 /**
+  * @brief LPUART2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_LPUART2_UART_Init(void)
+{
+
+  /* USER CODE BEGIN LPUART2_Init 0 */
+
+  /* USER CODE END LPUART2_Init 0 */
+
+  /* USER CODE BEGIN LPUART2_Init 1 */
+
+  /* USER CODE END LPUART2_Init 1 */
+  hlpuart2.Instance = LPUART2;
+  hlpuart2.Init.BaudRate = 209700;
+  hlpuart2.Init.WordLength = UART_WORDLENGTH_8B;
+  hlpuart2.Init.StopBits = UART_STOPBITS_1;
+  hlpuart2.Init.Parity = UART_PARITY_NONE;
+  hlpuart2.Init.Mode = UART_MODE_TX_RX;
+  hlpuart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  hlpuart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  hlpuart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  hlpuart2.FifoMode = UART_FIFOMODE_DISABLE;
+  if (HAL_UART_Init(&hlpuart2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetTxFifoThreshold(&hlpuart2, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetRxFifoThreshold(&hlpuart2, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_DisableFifoMode(&hlpuart2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN LPUART2_Init 2 */
+
+  /* USER CODE END LPUART2_Init 2 */
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -356,7 +463,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOD, EN_12V0P_Pin|PMIC_EN_Pin|MCU_WATCHDOG_PULSE_Pin|MCU_RS422_EN_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, LCL_1_EN_Pin|LCL_2_Pin|LCL_4_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, LCL_1_EN_Pin|LCL_4_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : LEDGRN_Pin LEDRED_Pin */
   GPIO_InitStruct.Pin = LEDGRN_Pin|LEDRED_Pin;
@@ -365,14 +472,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PB10 PB11 */
-  GPIO_InitStruct.Pin = GPIO_PIN_10|GPIO_PIN_11;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : EN_12V0P_Pin PMIC_EN_Pin MCU_WATCHDOG_PULSE_Pin MCU_RS422_EN_Pin */
-  GPIO_InitStruct.Pin = EN_12V0P_Pin|PMIC_EN_Pin|MCU_WATCHDOG_PULSE_Pin|MCU_RS422_EN_Pin;
+  /*Configure GPIO pins : EN_12V0P_Pin PMIC_EN_Pin MCU_RS422_EN_Pin */
+  GPIO_InitStruct.Pin = EN_12V0P_Pin|PMIC_EN_Pin|MCU_RS422_EN_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -390,12 +491,25 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(PUSH_BUTTON_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LCL_1_EN_Pin LCL_2_Pin LCL_4_Pin */
-  GPIO_InitStruct.Pin = LCL_1_EN_Pin|LCL_2_Pin|LCL_4_Pin;
+  /*Configure GPIO pin : MCU_WATCHDOG_PULSE_Pin */
+  GPIO_InitStruct.Pin = MCU_WATCHDOG_PULSE_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(MCU_WATCHDOG_PULSE_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : LCL_1_EN_Pin LCL_4_Pin */
+  GPIO_InitStruct.Pin = LCL_1_EN_Pin|LCL_4_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : LCL_2_Pin */
+  GPIO_InitStruct.Pin = LCL_2_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(LCL_2_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI4_15_IRQn, 0, 0);

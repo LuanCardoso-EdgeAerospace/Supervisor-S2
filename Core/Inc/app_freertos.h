@@ -60,6 +60,7 @@ extern osThreadId_t printerHandle;
 extern osThreadId_t powerUpHandle;
 extern osThreadId_t serviceWatchdogHandle;
 extern osThreadId_t logPowerHandle;
+extern osThreadId_t printPowerHandle;
 extern osMutexId_t powerLogMutexHandle;
 extern osMessageQueueId_t printQueueHandle;
 
@@ -74,9 +75,13 @@ void printer(void *argument);
 void powerUp(void *argument);
 void serviceWatchdog(void *argument);
 void logPower(void *argument);
+extern void printPower(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
+/* Hook prototypes */
+void configureTimerForRunTimeStats(void);
+unsigned long getRunTimeCounterValue(void);
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
 

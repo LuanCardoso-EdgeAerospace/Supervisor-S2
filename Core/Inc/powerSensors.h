@@ -8,10 +8,10 @@
 #define POWER_LOG_MUTEX_TIMEOUT 10U
 
 //define common values to be shared by all the sensors, but allows individual sensors to be overwritten.
-#define INA230_COMMON_SHUNT_ADC_CT        INA230_SHUNT_ADC_CT_588
-#define INA230_COMMON_VBUS_ADC_CT         INA230_VBUS_ADC_CT_588
-#define INA230_COMMON_AVG                 INA230_AVG_4
-#define INA230_COMMON_CURRENT_LSB         (uint16_t)(1000)
+#define INA230_COMMON_SHUNT_ADC_CT        INA230_SHUNT_ADC_CT_140
+#define INA230_COMMON_VBUS_ADC_CT         INA230_VBUS_ADC_CT_140
+#define INA230_COMMON_AVG                 INA230_AVG_128
+#define INA230_COMMON_CURRENT_LSB         (uint16_t)(1) /*milliamps per bit*/
 
 
 //name, address, shuntResistor(mOhm), i2cbus, currentLSB, ShuntConvertTime, BusConvertTime, AveragingMode,
@@ -24,6 +24,8 @@
     X(INA230_1V8_2A,   (0b1000001), 2, hi2c3, INA230_COMMON_CURRENT_LSB, INA230_COMMON_SHUNT_ADC_CT, INA230_COMMON_VBUS_ADC_CT, INA230_COMMON_AVG)          \
     X(INA230_12V_3A,   (0b1001010), 2, hi2c2, INA230_COMMON_CURRENT_LSB, INA230_COMMON_SHUNT_ADC_CT, INA230_COMMON_VBUS_ADC_CT, INA230_COMMON_AVG)
 
+#define INA230_T_LIST(X)        \
+    X(INA230_3V3_10A,  (0b1001000), 1, hi2c3, INA230_COMMON_CURRENT_LSB, INA230_COMMON_SHUNT_ADC_CT, INA230_COMMON_VBUS_ADC_CT, INA230_COMMON_AVG)
 struct INA230_readout {
     int16_t current;
     uint16_t power;

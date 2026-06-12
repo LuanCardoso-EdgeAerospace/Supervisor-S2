@@ -12,7 +12,7 @@ PowerLogData_t powerLogData;
 INA230_LIST(INA230_DECLARE)
 #undef INA230_DECLARE
 
-extern I2C_HandleTypeDef hi2c3;
+extern I2C_HandleTypeDef hi2c2, hi2c3;
 
 void ina230write(I2C_HandleTypeDef *hi2c, uint16_t addr, uint8_t reg, uint16_t pData){
   addr <<=1;
@@ -20,27 +20,28 @@ void ina230write(I2C_HandleTypeDef *hi2c, uint16_t addr, uint8_t reg, uint16_t p
   data[0]=pData >> 8;
   data[1]=pData & 0xff;
 
-  HAL_I2C_Mem_Write(hi2c, addr, reg, I2C_MEMADD_SIZE_8BIT, data, 2, 1000);
+  HAL_StatusTypeDef stat = HAL_I2C_Mem_Write(hi2c, addr, reg, I2C_MEMADD_SIZE_8BIT, data, 2, 1000);
 }
 
 uint16_t ina230read(I2C_HandleTypeDef *hi2c, uint16_t addr, uint8_t reg){
   addr <<=1;
   uint8_t data[2]={0};
-  HAL_I2C_Mem_Read(hi2c, addr, reg, I2C_MEMADD_SIZE_8BIT, data, 2, 1000);
+  HAL_StatusTypeDef stat = HAL_I2C_Mem_Read(hi2c, addr, reg, I2C_MEMADD_SIZE_8BIT, data, 2, 1000);
   uint16_t res = (data[0]<<8)|(data[1]);
   return res;
 }
 
-#define INA230_SETUP_SENSOR(name,  \
-                            addr,  \
-                            shunt,  \
-                            bus,   \
-                            clsb,  \
-                            shct,  \
-                            bct,   \
+#define INA230_SETUP_SENSOR(name,                                     \
+                            addr,                                     \
+                            shunt,                                    \
+                            bus,                                      \
+                            clsb,                                     \
+                            shct,                                     \
+                            bct,                                      \
                             avgm)                                     \
     do {                                                              \
-        name = INA230_init(addr,                                      \
+        name = INA230_init(&bus,                                      \
+                           addr,                                      \
                            clsb,                                      \
                            shunt,                                     \
                            shct,                                      \
@@ -52,14 +53,21 @@ uint16_t ina230read(I2C_HandleTypeDef *hi2c, uint16_t addr, uint8_t reg){
     } while (0);
 
 
+int sensorsSet=0;
 void setUpPowerSensors(void){
+
+	if (!sensorsSet){
 	INA230_LIST(INA230_SETUP_SENSOR)
-#undef INA230_SETUP_SENSOR
+	#undef INA230_SETUP_SENSOR
+
+
 	//TODO: Configure Alarms
+	sensorsSet=1;
+	}
 }
 
 //CMSIS RTOS task
-void logPower_(void *argument){
+void logPower(void *argument){
     //TODO: Remove underscore from name
 
     setUpPowerSensors();
@@ -93,8 +101,90 @@ void logPower_(void *argument){
 }
 
 
+void printPower(void *argument){
+    int printDelay;
+    PowerLogData_t log = {0};
+
+    for(;;){
+
+    	while(sensorsSet != 1){
+    		osDelay(1000);
+    		queuedPrintf("Power sensors not initialized, sleeping...\r\n");
+    	}
+
+        if (osMutexAcquire(powerLogMutexHandle, POWER_LOG_MUTEX_TIMEOUT) == osOK) {
+            log = powerLogData;
+            osMutexRelease(powerLogMutexHandle);
+
+        }else{
+        	continue;
+        }
+
+        #define INA230_PRINT(name, a, b, c, d, e, f, g)                         \
+            do {                                                                \
+                queuedPrintf(                                                   \
+                    "%16s: Vbus=%5u mV, Vshunt=%5d uV, I=%4d mA, P=%4u mW, ts[%lu]\r\n",   \
+					#name,                                                      \
+                    log.name##_readout.voltageBus,                              \
+                    log.name##_readout.voltageShunt,                            \
+                    log.name##_readout.current,                                 \
+                    log.name##_readout.power,                                   \
+                    log.name##_readout.timestamp                                \
+                );                                                              \
+            } while (0);
+
+        INA230_LIST(INA230_PRINT);
+        #undef INA230_PRINT
+        queuedPrintf("\r\n");
+
+        osDelay(printDelay=1000);
+    }
+}
+
 //TODO: Tie alarms to interrups
 //TODO: Create an emergency shutdown task, called by the interrupt.
 
+
+void testINA(void){
+	HAL_GPIO_WritePin(EN_12V0P_GPIO_Port, EN_12V0P_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(LCL_1_EN_GPIO_Port, LCL_1_EN_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(PMIC_EN_GPIO_Port, PMIC_EN_Pin, GPIO_PIN_SET);
+
+    //Call this function before the freeRTOS goes up and debug with watchpoits
+    #define INA230_DECLARE(name, a, b, c, d, e, f, g) INA230_t name;
+    INA230_T_LIST(INA230_DECLARE)
+    #undef INA230_DECLARE
+
+
+    #define INA230_SETUP_SENSOR(name,                                     \
+                            addr,                                     \
+                            shunt,                                    \
+                            bus,                                      \
+                            clsb,                                     \
+                            shct,                                     \
+                            bct,                                      \
+                            avgm)                                     \
+    do {                                                              \
+        name = INA230_init(&bus,                                      \
+                           addr,                                      \
+                           clsb,                                      \
+                           shunt,                                     \
+                           shct,                                      \
+                           bct,                                       \
+                           avgm,                                      \
+						   ina230write,								  \
+						   ina230read);								  \
+		INA230_start(name, INA230_MODE_CONTINOUS_ALL);                \
+    } while (0);
+
+    INA230_T_LIST(INA230_SETUP_SENSOR)
+
+	#undef INA230_SETUP_SENSOR
+
+    volatile uint16_t id = INA230_getID(INA230_3V3_10A);
+
+    for(;;) continue;
+    
+}
 
 

@@ -84,7 +84,7 @@ void powerUp(void *argument){
 }
 
 extern osThreadId_t powerUpHandle;
-#define DEBOUNCE_MS 100
+#define DEBOUNCE_MS 500
 void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin){
 	static uint32_t lastPressTick = 0;
 

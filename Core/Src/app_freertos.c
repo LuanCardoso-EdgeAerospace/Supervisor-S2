@@ -62,14 +62,14 @@ const osThreadAttr_t LEDBlink_attributes = {
 osThreadId_t printerHandle;
 const osThreadAttr_t printer_attributes = {
   .name = "printer",
-  .priority = (osPriority_t) osPriorityLow,
+  .priority = (osPriority_t) osPriorityHigh,
   .stack_size = 512 * 4
 };
 /* Definitions for powerUp */
 osThreadId_t powerUpHandle;
 const osThreadAttr_t powerUp_attributes = {
   .name = "powerUp",
-  .priority = (osPriority_t) osPriorityHigh,
+  .priority = (osPriority_t) osPriorityNormal,
   .stack_size = 256 * 4
 };
 /* Definitions for serviceWatchdog */
@@ -84,7 +84,14 @@ osThreadId_t logPowerHandle;
 const osThreadAttr_t logPower_attributes = {
   .name = "logPower",
   .priority = (osPriority_t) osPriorityNormal,
-  .stack_size = 128 * 4
+  .stack_size = 512 * 4
+};
+/* Definitions for printPower */
+osThreadId_t printPowerHandle;
+const osThreadAttr_t printPower_attributes = {
+  .name = "printPower",
+  .priority = (osPriority_t) osPriorityNormal,
+  .stack_size = 256 * 4
 };
 /* Definitions for powerLogMutex */
 osMutexId_t powerLogMutexHandle;
@@ -101,6 +108,19 @@ const osMessageQueueAttr_t printQueue_attributes = {
 /* USER CODE BEGIN FunctionPrototypes */
 
 /* USER CODE END FunctionPrototypes */
+
+/* USER CODE BEGIN 1 */
+/* Functions needed when configGENERATE_RUN_TIME_STATS is on */
+__weak void configureTimerForRunTimeStats(void)
+{
+
+}
+
+__weak unsigned long getRunTimeCounterValue(void)
+{
+return 0;
+}
+/* USER CODE END 1 */
 
 /**
   * @brief  FreeRTOS initialization
@@ -148,6 +168,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of logPower */
   logPowerHandle = osThreadNew(logPower, NULL, &logPower_attributes);
+
+  /* creation of printPower */
+  printPowerHandle = osThreadNew(printPower, NULL, &printPower_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
