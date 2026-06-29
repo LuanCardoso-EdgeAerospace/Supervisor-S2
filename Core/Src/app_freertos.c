@@ -93,6 +93,27 @@ const osThreadAttr_t printPower_attributes = {
   .priority = (osPriority_t) osPriorityNormal,
   .stack_size = 256 * 4
 };
+/* Definitions for I2C1_Manager */
+osThreadId_t I2C1_ManagerHandle;
+const osThreadAttr_t I2C1_Manager_attributes = {
+  .name = "I2C1_Manager",
+  .priority = (osPriority_t) osPriorityNormal,
+  .stack_size = 256 * 4
+};
+/* Definitions for I2C2_Manager */
+osThreadId_t I2C2_ManagerHandle;
+const osThreadAttr_t I2C2_Manager_attributes = {
+  .name = "I2C2_Manager",
+  .priority = (osPriority_t) osPriorityNormal,
+  .stack_size = 256 * 4
+};
+/* Definitions for I2C3_Manager */
+osThreadId_t I2C3_ManagerHandle;
+const osThreadAttr_t I2C3_Manager_attributes = {
+  .name = "I2C3_Manager",
+  .priority = (osPriority_t) osPriorityNormal,
+  .stack_size = 128 * 4
+};
 /* Definitions for powerLogMutex */
 osMutexId_t powerLogMutexHandle;
 const osMutexAttr_t powerLogMutex_attributes = {
@@ -102,6 +123,21 @@ const osMutexAttr_t powerLogMutex_attributes = {
 osMessageQueueId_t printQueueHandle;
 const osMessageQueueAttr_t printQueue_attributes = {
   .name = "printQueue"
+};
+/* Definitions for i2c1Queue */
+osMessageQueueId_t i2c1QueueHandle;
+const osMessageQueueAttr_t i2c1Queue_attributes = {
+  .name = "i2c1Queue"
+};
+/* Definitions for i2c2Queue */
+osMessageQueueId_t i2c2QueueHandle;
+const osMessageQueueAttr_t i2c2Queue_attributes = {
+  .name = "i2c2Queue"
+};
+/* Definitions for i2c3Queue */
+osMessageQueueId_t i2c3QueueHandle;
+const osMessageQueueAttr_t i2c3Queue_attributes = {
+  .name = "i2c3Queue"
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -147,6 +183,12 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE END RTOS_TIMERS */
   /* creation of printQueue */
   printQueueHandle = osMessageQueueNew (16, 128, &printQueue_attributes);
+  /* creation of i2c1Queue */
+  i2c1QueueHandle = osMessageQueueNew (8, sizeof(I2C_Request_t), &i2c1Queue_attributes);
+  /* creation of i2c2Queue */
+  i2c2QueueHandle = osMessageQueueNew (8, sizeof(I2C_Request_t), &i2c2Queue_attributes);
+  /* creation of i2c3Queue */
+  i2c3QueueHandle = osMessageQueueNew (8, sizeof(I2C_Request_t), &i2c3Queue_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
@@ -171,6 +213,15 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of printPower */
   printPowerHandle = osThreadNew(printPower, NULL, &printPower_attributes);
+
+  /* creation of I2C1_Manager */
+  I2C1_ManagerHandle = osThreadNew(I2C1_ManagerTask, NULL, &I2C1_Manager_attributes);
+
+  /* creation of I2C2_Manager */
+  I2C2_ManagerHandle = osThreadNew(I2C2_ManagerTask, NULL, &I2C2_Manager_attributes);
+
+  /* creation of I2C3_Manager */
+  I2C3_ManagerHandle = osThreadNew(I2C3_ManagerTask, NULL, &I2C3_Manager_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
