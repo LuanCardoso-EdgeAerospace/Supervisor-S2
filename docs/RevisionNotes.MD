@@ -35,3 +35,11 @@ Latching current limiter
 
 
 
+Temperature Sensors
+-------------------
+
+1. The ~THERM pin is not connected anywhere. On a future version of the design, each one of them should be added to the supervisor to be used as an alert pin.
+
+	- Alternativelly, feed the 3 of them into an AND gate and let the supervisor query the i2c bus for the result.
+
+

@@ -63,6 +63,8 @@ void powerUp(void *argument){
 //		osDelay(1000);
 //	}
 
+	PowerEnable();
+
     for(;;){
 		//wait for button press
 		uint32_t flags = osThreadFlagsWait(

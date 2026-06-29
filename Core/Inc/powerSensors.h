@@ -10,7 +10,7 @@
 //define common values to be shared by all the sensors, but allows individual sensors to be overwritten.
 #define INA230_COMMON_SHUNT_ADC_CT        INA230_SHUNT_ADC_CT_140
 #define INA230_COMMON_VBUS_ADC_CT         INA230_VBUS_ADC_CT_140
-#define INA230_COMMON_AVG                 INA230_AVG_128
+#define INA230_COMMON_AVG                 INA230_AVG_1
 #define INA230_COMMON_CURRENT_LSB         (uint16_t)(1) /*milliamps per bit*/
 
 
