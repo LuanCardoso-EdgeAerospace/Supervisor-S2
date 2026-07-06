@@ -65,6 +65,7 @@ extern osThreadId_t I2C1_ManagerHandle;
 extern osThreadId_t I2C2_ManagerHandle;
 extern osThreadId_t I2C3_ManagerHandle;
 extern osMutexId_t powerLogMutexHandle;
+extern osMutexId_t thermLogMutexHandle;
 extern osMessageQueueId_t printQueueHandle;
 extern osMessageQueueId_t i2c1QueueHandle;
 extern osMessageQueueId_t i2c2QueueHandle;

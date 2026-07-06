@@ -14,21 +14,30 @@ INA230_LIST(INA230_DECLARE)
 
 extern I2C_HandleTypeDef hi2c2, hi2c3;
 
-void ina230write(I2C_HandleTypeDef *hi2c, uint16_t addr, uint8_t reg, uint16_t pData){
-  addr <<=1;
-  uint8_t data[2]={0};
-  data[0]=pData >> 8;
-  data[1]=pData & 0xff;
+void ina230write(I2C_HandleTypeDef *hi2c, uint16_t addr, uint8_t reg, uint16_t pData) {
+    addr <<= 1;
+    uint8_t data[2] = {0};
+    data[0] = pData >> 8;
+    data[1] = pData & 0xff;
 
-  HAL_StatusTypeDef stat = HAL_I2C_Mem_Write(hi2c, addr, reg, I2C_MEMADD_SIZE_8BIT, data, 2, 1000);
+    HAL_StatusTypeDef stat = HAL_I2C_Mem_Write(hi2c, addr, reg, I2C_MEMADD_SIZE_8BIT, data, 2, 1000);
+    if (stat != HAL_OK) {
+        queuedPrintf("INA230 write failed: addr=0x%02X reg=0x%02X data=0x%04X stat=%d\r\n", addr, reg, pData, stat);
+    }
 }
 
-uint16_t ina230read(I2C_HandleTypeDef *hi2c, uint16_t addr, uint8_t reg){
-  addr <<=1;
-  uint8_t data[2]={0};
-  HAL_StatusTypeDef stat = HAL_I2C_Mem_Read(hi2c, addr, reg, I2C_MEMADD_SIZE_8BIT, data, 2, 1000);
-  uint16_t res = (data[0]<<8)|(data[1]);
-  return res;
+uint16_t ina230read(I2C_HandleTypeDef *hi2c, uint16_t addr, uint8_t reg) {
+    addr <<= 1;
+    uint8_t data[2] = {0};
+    HAL_StatusTypeDef stat = HAL_I2C_Mem_Read(hi2c, addr, reg, I2C_MEMADD_SIZE_8BIT, data, 2, 1000);
+    if (stat != HAL_OK) {
+        queuedPrintf("INA230 read failed: addr=0x%02X reg=0x%02X stat=%d\r\n", addr, reg, stat);
+
+        return 0;
+    }
+
+    uint16_t res = (data[0] << 8) | (data[1]);
+    return res;
 }
 
 #define INA230_SETUP_SENSOR(name,                                     \

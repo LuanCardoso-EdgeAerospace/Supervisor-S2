@@ -10,6 +10,7 @@ void LEDBlink(void *argument)
   for(;;)
   {
     HAL_GPIO_TogglePin(LEDGRN_GPIO_Port, LEDGRN_Pin);
+
     osDelayUntil(tick+=250);
   }
   /* USER CODE END LEDBlink */

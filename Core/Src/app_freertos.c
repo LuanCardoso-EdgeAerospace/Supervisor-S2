@@ -22,7 +22,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "i2c_manager.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -55,14 +55,14 @@ const osThreadAttr_t defaultTask_attributes = {
 osThreadId_t LEDBlinkHandle;
 const osThreadAttr_t LEDBlink_attributes = {
   .name = "LEDBlink",
-  .priority = (osPriority_t) osPriorityLow,
+  .priority = (osPriority_t) osPriorityNormal,
   .stack_size = 128 * 4
 };
 /* Definitions for printer */
 osThreadId_t printerHandle;
 const osThreadAttr_t printer_attributes = {
   .name = "printer",
-  .priority = (osPriority_t) osPriorityHigh,
+  .priority = (osPriority_t) osPriorityNormal,
   .stack_size = 512 * 4
 };
 /* Definitions for powerUp */
@@ -76,8 +76,8 @@ const osThreadAttr_t powerUp_attributes = {
 osThreadId_t serviceWatchdogHandle;
 const osThreadAttr_t serviceWatchdog_attributes = {
   .name = "serviceWatchdog",
-  .priority = (osPriority_t) osPriorityRealtime,
-  .stack_size = 128 * 4
+  .priority = (osPriority_t) osPriorityHigh,
+  .stack_size = 256 * 4
 };
 /* Definitions for logPower */
 osThreadId_t logPowerHandle;
@@ -112,12 +112,17 @@ osThreadId_t I2C3_ManagerHandle;
 const osThreadAttr_t I2C3_Manager_attributes = {
   .name = "I2C3_Manager",
   .priority = (osPriority_t) osPriorityNormal,
-  .stack_size = 128 * 4
+  .stack_size = 256 * 4
 };
 /* Definitions for powerLogMutex */
 osMutexId_t powerLogMutexHandle;
 const osMutexAttr_t powerLogMutex_attributes = {
   .name = "powerLogMutex"
+};
+/* Definitions for thermLogMutex */
+osMutexId_t thermLogMutexHandle;
+const osMutexAttr_t thermLogMutex_attributes = {
+  .name = "thermLogMutex"
 };
 /* Definitions for printQueue */
 osMessageQueueId_t printQueueHandle;
@@ -169,6 +174,9 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE END Init */
   /* creation of powerLogMutex */
   powerLogMutexHandle = osMutexNew(&powerLogMutex_attributes);
+
+  /* creation of thermLogMutex */
+  thermLogMutexHandle = osMutexNew(&thermLogMutex_attributes);
 
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */

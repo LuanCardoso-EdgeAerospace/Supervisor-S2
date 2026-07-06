@@ -133,10 +133,7 @@ int main(void)
                     200);
   HAL_GPIO_WritePin(MCU_RS422_EN_GPIO_Port, MCU_RS422_EN_Pin, GPIO_PIN_RESET);
 
-  //Pin is open drain, this sets it to hiZ
-  HAL_GPIO_WritePin(MCU_WATCHDOG_PULSE_GPIO_Port,
-                     MCU_WATCHDOG_PULSE_Pin, GPIO_PIN_SET);
-//  testINA();
+
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -460,7 +457,10 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOE, LEDGRN_Pin|LEDRED_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOD, EN_12V0P_Pin|PMIC_EN_Pin|MCU_WATCHDOG_PULSE_Pin|MCU_RS422_EN_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOD, EN_12V0P_Pin|PMIC_EN_Pin|MCU_RS422_EN_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(MCU_WATCHDOG_PULSE_GPIO_Port, MCU_WATCHDOG_PULSE_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, LCL_1_EN_Pin|LCL_4_Pin, GPIO_PIN_RESET);
@@ -493,8 +493,8 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : MCU_WATCHDOG_PULSE_Pin */
   GPIO_InitStruct.Pin = MCU_WATCHDOG_PULSE_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(MCU_WATCHDOG_PULSE_GPIO_Port, &GPIO_InitStruct);
 
