@@ -173,6 +173,9 @@ typedef struct TMP468_t{
     #ifdef TMP468_REMOTE_CONFIG_STRUCT
     struct TMP468_remoteConfig remote[8];
     #endif //TMP468_REMOTE_CONFIG_STRUCT
+    uint8_t enabledChannels; //TODO: Passed during init, expected remote sensors
+    uint8_t detectedChannels; //TODO: Checked during init, detected remote sensors
+    uint8_t enabled; //TODO: Boolean, set to zero if declared but not used. Externally managed
     void (*i2c_write)(uint16_t, uint8_t, uint16_t); //addr, reg, pData
     uint16_t (*i2c_read )(uint16_t, uint8_t); //addr, reg
 } TMP468_t;
@@ -184,11 +187,12 @@ typedef struct TMP468_t{
 #define TMP468_itoeta(i)   ((1.008f * 2088.0f) / (2088.0f + (float)(i)))
 
 int32_t     TMP468_getRemoteTemperature(TMP468_t target, int idx);
+int16_t     TMP468_getRemoteTemperatureRAW(TMP468_t target, int idx);
 uint16_t    TMP468_getTHERM1Status(TMP468_t target);
 uint16_t    TMP468_getTHERM2Status(TMP468_t target);
 uint16_t    TMP468_getOpenStatus(TMP468_t target);
 int         TMP468_isbusy(TMP468_t target);
-TMP468_t    TMP468_init(uint16_t addr, uint16_t conversionRate, uint16_t hysteresis, uint32_t THERM1, uint32_t THERM2, 
+TMP468_t    TMP468_init(uint16_t addr, uint16_t conversionRate, uint16_t hysteresis, uint32_t THERM1, uint32_t THERM2, uint8_t enabledChannels,
                         void (*i2c_write)(uint16_t, uint8_t, uint16_t), 
                         uint16_t (*i2c_read )(uint16_t, uint8_t) );
 void        TMP468_setRemoteEnabled(TMP468_t target, uint16_t flags);

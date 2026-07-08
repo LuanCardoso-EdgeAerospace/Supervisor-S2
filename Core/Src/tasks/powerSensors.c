@@ -4,6 +4,7 @@
 #include "tasks.h"
 #include "powerSensors.h"
 #include "app_freertos.h"
+#include "i2c_manager.h"
 
 PowerLogData_t powerLogData;
 
@@ -20,7 +21,7 @@ void ina230write(I2C_HandleTypeDef *hi2c, uint16_t addr, uint8_t reg, uint16_t p
     data[0] = pData >> 8;
     data[1] = pData & 0xff;
 
-    HAL_StatusTypeDef stat = HAL_I2C_Mem_Write(hi2c, addr, reg, I2C_MEMADD_SIZE_8BIT, data, 2, 1000);
+    HAL_StatusTypeDef stat = I2C_Mem_Write(hi2c, addr, reg, I2C_MEMADD_SIZE_8BIT, data, 2, 1000);
     if (stat != HAL_OK) {
         queuedPrintf("INA230 write failed: addr=0x%02X reg=0x%02X data=0x%04X stat=%d\r\n", addr, reg, pData, stat);
     }
@@ -29,7 +30,7 @@ void ina230write(I2C_HandleTypeDef *hi2c, uint16_t addr, uint8_t reg, uint16_t p
 uint16_t ina230read(I2C_HandleTypeDef *hi2c, uint16_t addr, uint8_t reg) {
     addr <<= 1;
     uint8_t data[2] = {0};
-    HAL_StatusTypeDef stat = HAL_I2C_Mem_Read(hi2c, addr, reg, I2C_MEMADD_SIZE_8BIT, data, 2, 1000);
+    HAL_StatusTypeDef stat = I2C_Mem_Read(hi2c, addr, reg, I2C_MEMADD_SIZE_8BIT, data, 2, 1000);
     if (stat != HAL_OK) {
         queuedPrintf("INA230 read failed: addr=0x%02X reg=0x%02X stat=%d\r\n", addr, reg, stat);
 
@@ -77,7 +78,7 @@ void setUpPowerSensors(void){
 
 //CMSIS RTOS task
 void logPower(void *argument){
-    //TODO: Remove underscore from name
+    (void)argument;
 
     setUpPowerSensors();
 
@@ -111,6 +112,7 @@ void logPower(void *argument){
 
 
 void printPower(void *argument){
+	(void)argument;
     int printDelay;
     PowerLogData_t log = {0};
 
@@ -155,14 +157,17 @@ void printPower(void *argument){
 
 
 void testINA(void){
+	//TODO: Deprecate this
 	HAL_GPIO_WritePin(EN_12V0P_GPIO_Port, EN_12V0P_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(LCL_1_EN_GPIO_Port, LCL_1_EN_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(PMIC_EN_GPIO_Port, PMIC_EN_Pin, GPIO_PIN_SET);
 
     //Call this function before the freeRTOS goes up and debug with watchpoits
     #define INA230_DECLARE(name, a, b, c, d, e, f, g) INA230_t name;
+
     INA230_T_LIST(INA230_DECLARE)
-    #undef INA230_DECLARE
+
+	#undef INA230_DECLARE
 
 
     #define INA230_SETUP_SENSOR(name,                                     \

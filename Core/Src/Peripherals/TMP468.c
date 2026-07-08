@@ -74,6 +74,20 @@ int32_t TMP468_getRemoteTemperature(TMP468_t target, int idx){
 }
 
 /**
+ * @brief Returns temperature of channel idx in the raw register format (LSB= 0.0625 degrees C)
+ * 
+ * @param target 
+ * @param idx Remote sensor channel. Zero if using local sensor
+ * @return uint32_t 
+ */
+int16_t TMP468_getRemoteTemperatureRAW(TMP468_t target, int idx){
+    if (idx<0 || idx>8) return -1;
+    return target.i2c_read(target.addr, TMP468_REG_LOCAL_TMP + idx); 
+    //This is only possible since the registers for the remote register are in adjacent address.
+}
+
+
+/**
  * @brief Returns status of the therm alerts
  * 
  * Returns a bitfield with a bit set when a channel has exceeded the THERM1 limit. 
@@ -113,12 +127,15 @@ uint16_t TMP468_getTHERM2Status(TMP468_t target){
  * 
  * Returns a bitfield with a bit set when an open circuit is detected. Use the masks
  * TMP468_REMOTE*_MASK and TMP468_LOCAL_MASK for checking each channel independently.
+ * Updates target.detectedChannels the remotes, drops local.
  * 
  * @param target 
  * @return uint16_t 0 if all circuits are closed, mask otherwise.
  */
 uint16_t TMP468_getOpenStatus(TMP468_t target){
-    return target.i2c_read(target.addr, TMP468_REG_REMOTE_CHANNEL_OPEN_STATUS); 
+    uint16_t e = target.i2c_read(target.addr, TMP468_REG_REMOTE_CHANNEL_OPEN_STATUS); 
+    target.detectedChannels=e>>8;
+    return e;
 }
 
 /**
@@ -143,7 +160,7 @@ int TMP468_isbusy(TMP468_t target){
  * @param THERM2 Thermal alarm, in 0.5 degrees resolution
  * @return TMP468_t 
  */
-TMP468_t TMP468_init(uint16_t addr, uint16_t conversionRate, uint16_t hysteresis, uint32_t THERM1, uint32_t THERM2, 
+TMP468_t TMP468_init(uint16_t addr, uint16_t conversionRate, uint16_t hysteresis, uint32_t THERM1, uint32_t THERM2, uint8_t enabledChannels,
                      void (*i2c_write)(uint16_t, uint8_t, uint16_t), 
                      uint16_t (*i2c_read )(uint16_t, uint8_t) ){
     TMP468_t target = {
@@ -151,6 +168,9 @@ TMP468_t TMP468_init(uint16_t addr, uint16_t conversionRate, uint16_t hysteresis
         .hysteresis = hysteresis,
         .localTHERMLimit1 = THERM1,
         .localTHERMLimit2 = THERM2,
+        .enabledChannels = enabledChannels,
+        .detectedChannels = 0,
+        .enabled = 1, 
         .i2c_write = i2c_write,
         .i2c_read = i2c_read
     };
@@ -163,7 +183,7 @@ TMP468_t TMP468_init(uint16_t addr, uint16_t conversionRate, uint16_t hysteresis
     target.i2c_write(target.addr, TMP468_REG_THERM_HYSTERESIS, hysteresis); 
     target.i2c_write(target.addr, TMP468_REG_LOCAL_THERM2_LIMIT, halfDegreesToThermLimitreg(THERM1));
     target.i2c_write(target.addr, TMP468_REG_LOCAL_THERM1_LIMIT, halfDegreesToThermLimitreg(THERM2));
-    
+
     return target;
 }
 

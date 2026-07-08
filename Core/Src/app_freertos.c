@@ -114,6 +114,13 @@ const osThreadAttr_t I2C3_Manager_attributes = {
   .priority = (osPriority_t) osPriorityNormal,
   .stack_size = 256 * 4
 };
+/* Definitions for printTherm */
+osThreadId_t printThermHandle;
+const osThreadAttr_t printTherm_attributes = {
+  .name = "printTherm",
+  .priority = (osPriority_t) osPriorityNormal,
+  .stack_size = 256 * 4
+};
 /* Definitions for powerLogMutex */
 osMutexId_t powerLogMutexHandle;
 const osMutexAttr_t powerLogMutex_attributes = {
@@ -231,6 +238,9 @@ void MX_FREERTOS_Init(void) {
   /* creation of I2C3_Manager */
   I2C3_ManagerHandle = osThreadNew(I2C3_ManagerTask, NULL, &I2C3_Manager_attributes);
 
+  /* creation of printTherm */
+  printThermHandle = osThreadNew(printTherm, NULL, &printTherm_attributes);
+
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
@@ -346,6 +356,24 @@ __weak void logPower(void *argument)
     osDelay(1);
   }
   /* USER CODE END logPower */
+}
+
+/* USER CODE BEGIN Header_printTherm */
+/**
+* @brief Function implementing the printTherm thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_printTherm */
+__weak void printTherm(void *argument)
+{
+  /* USER CODE BEGIN printTherm */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END printTherm */
 }
 
 /* Private application code --------------------------------------------------*/

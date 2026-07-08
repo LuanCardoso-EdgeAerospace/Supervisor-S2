@@ -1,27 +1,35 @@
+//TODO: Validate design of the manager
 #include "i2c_manager.h"
 #include "cmsis_os2.h"
+#include <string.h>
 
-/* --- Extern queue handles  --- */
+/* --- Extern handles generated in main.c / app_freertos.c --- */
+extern I2C_HandleTypeDef hi2c1;
+extern I2C_HandleTypeDef hi2c2;
+extern I2C_HandleTypeDef hi2c3;
+
 extern osMessageQueueId_t i2c1QueueHandle;
 extern osMessageQueueId_t i2c2QueueHandle;
 extern osMessageQueueId_t i2c3QueueHandle;
 
-/* --- Internal state --- */
-static I2C_HandleTypeDef *s_hi2c[I2C_BUS_COUNT];
-static osMessageQueueId_t s_queues[I2C_BUS_COUNT]; /* indexed by I2C_BusId_t */
+static I2C_HandleTypeDef *i2c_get_handle(I2C_BusId_t bus)
+{
+    switch (bus) {
+    case I2C_BUS_1: return &hi2c1;
+    case I2C_BUS_2: return &hi2c2;
+    case I2C_BUS_3: return &hi2c3;
+    default:        return NULL;
+    }
+}
 
-/* --- Module Init --- */
-void I2C_Manager_Init(I2C_HandleTypeDef *hi2c1,
-                      I2C_HandleTypeDef *hi2c2,
-                      I2C_HandleTypeDef *hi2c3){
-
-    s_hi2c[I2C_BUS_1] = hi2c1;
-    s_hi2c[I2C_BUS_2] = hi2c2;
-    s_hi2c[I2C_BUS_3] = hi2c3;
-    
-    s_queues[I2C_BUS_1] = i2c1QueueHandle;
-    s_queues[I2C_BUS_2] = i2c2QueueHandle;
-    s_queues[I2C_BUS_3] = i2c3QueueHandle;
+static osMessageQueueId_t i2c_get_queue(I2C_BusId_t bus)
+{
+    switch (bus) {
+    case I2C_BUS_1: return i2c1QueueHandle;
+    case I2C_BUS_2: return i2c2QueueHandle;
+    case I2C_BUS_3: return i2c3QueueHandle;
+    default:        return NULL;
+    }
 }
 
 /* --- internal helpers ---- */
@@ -29,7 +37,8 @@ static HAL_StatusTypeDef i2c_submit(I2C_BusId_t bus,
                                     I2C_Request_t *op,
                                     uint32_t timeout_ms){
 
-    if (bus >= I2C_BUS_COUNT || s_queues[bus] == NULL) {
+    osMessageQueueId_t queue = i2c_get_queue(bus);
+    if (bus >= I2C_BUS_COUNT || queue == NULL) {
         return HAL_ERROR;
     }
 
@@ -40,7 +49,7 @@ static HAL_StatusTypeDef i2c_submit(I2C_BusId_t bus,
     }
 
     /* Post the op descriptor (by value — safe because caller is blocked) */
-    osStatus_t st = osMessageQueuePut(s_queues[bus], op, 0U,
+    osStatus_t st = osMessageQueuePut(queue, op, 0U,
                                       pdMS_TO_TICKS(timeout_ms));
     if (st != osOK) {
         osSemaphoreDelete(op->done_sem);
@@ -60,48 +69,46 @@ static HAL_StatusTypeDef i2c_submit(I2C_BusId_t bus,
 
 /* --- Public api ---*/
 
-HAL_StatusTypeDef I2C_Mem_Write(I2C_BusId_t  bus,
-                                uint16_t     DevAddress,
-                                uint16_t     MemAddress,
-                                uint16_t     MemAddSize,
-                                uint8_t     *pData,
-                                uint16_t     Size,
-                                uint32_t     timeout_ms)
-{
+HAL_StatusTypeDef I2C_Mem_Write(I2C_BusId_t bus, 
+                                uint16_t DevAddress, 
+                                uint16_t MemAddress, 
+                                uint16_t MemAddSize,
+                                uint8_t *pData, 
+                                uint16_t Size, 
+                                uint32_t timeout_ms) {
     if (Size > I2C_MGR_MAX_DATA_LEN || pData == NULL) {
         return HAL_ERROR;
     }
 
     I2C_Request_t op = {
-        .op            = I2C_OP_WRITE,
-        .dev_addr      = DevAddress,
-        .mem_addr      = MemAddress,
+        .op = I2C_OP_WRITE,
+        .dev_addr = DevAddress,
+        .mem_addr = MemAddress,
         .mem_addr_size = MemAddSize,
-        .size          = Size,
+        .size = Size,
     };
     memcpy(op.data, pData, Size);
 
     return i2c_submit(bus, &op, timeout_ms);
 }
 
-HAL_StatusTypeDef I2C_Mem_Read(I2C_BusId_t  bus,
-                               uint16_t     DevAddress,
-                               uint16_t     MemAddress,
-                               uint16_t     MemAddSize,
-                               uint8_t     *pData,
-                               uint16_t     Size,
-                               uint32_t     timeout_ms)
-{
+HAL_StatusTypeDef I2C_Mem_Read(I2C_BusId_t bus, 
+                                uint16_t DevAddress, 
+                                uint16_t MemAddress, 
+                                uint16_t MemAddSize,
+                                uint8_t *pData, 
+                                uint16_t Size, 
+                                uint32_t timeout_ms) {
     if (Size > I2C_MGR_MAX_DATA_LEN || pData == NULL) {
         return HAL_ERROR;
     }
 
     I2C_Request_t op = {
-        .op            = I2C_OP_READ,
-        .dev_addr      = DevAddress,
-        .mem_addr      = MemAddress,
+        .op = I2C_OP_READ,
+        .dev_addr = DevAddress,
+        .mem_addr = MemAddress,
         .mem_addr_size = MemAddSize,
-        .size          = Size,
+        .size = Size,
     };
 
     HAL_StatusTypeDef ret = i2c_submit(bus, &op, timeout_ms);
@@ -118,11 +125,17 @@ static void i2c_task_run(I2C_BusId_t bus)
 
     for (;;) {
         /* Block indefinitely waiting for an operation */
-        if (osMessageQueueGet(s_queues[bus], &op, NULL, osWaitForever) != osOK) {
+        osMessageQueueId_t queue = i2c_get_queue(bus);
+        I2C_HandleTypeDef *hi2c = i2c_get_handle(bus);
+
+        if (queue == NULL || hi2c == NULL) {
+            osDelay(1U);
             continue;
         }
 
-        I2C_HandleTypeDef *hi2c = s_hi2c[bus];
+        if (osMessageQueueGet(queue, &op, NULL, osWaitForever) != osOK) {
+            continue;
+        }
         HAL_StatusTypeDef  res;
 
         if (op.op == I2C_OP_WRITE) {

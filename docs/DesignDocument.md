@@ -2,22 +2,22 @@ This document stablishes the desin constraints and choices of the supervisor fir
 
 
 
-## Modules
+# Modules
 
-### printer
+printer
 
-### power sensors
+power sensors
 
-### termal sensors
+termal sensors
 
-### i2c manager
+[i2c manager](./i2c_manager.md)
 
-### FRAM storage
+FRAM storage
 
-### Logger
+Logger
 
-### Watchdog
+Watchdog
 
-### powerup
+powerup
 
-### Serial Comms
+Serial Comms
