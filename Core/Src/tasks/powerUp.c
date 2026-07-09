@@ -62,7 +62,7 @@ void powerUp(void *argument){
 //	for(;;){
 //		osDelay(1000);
 //	}
-
+	(void)argument;
 	PowerEnable();
 
     for(;;){

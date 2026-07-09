@@ -63,7 +63,7 @@ osThreadId_t printerHandle;
 const osThreadAttr_t printer_attributes = {
   .name = "printer",
   .priority = (osPriority_t) osPriorityNormal,
-  .stack_size = 512 * 4
+  .stack_size = 256 * 4
 };
 /* Definitions for powerUp */
 osThreadId_t powerUpHandle;
@@ -199,11 +199,11 @@ void MX_FREERTOS_Init(void) {
   /* creation of printQueue */
   printQueueHandle = osMessageQueueNew (16, 128, &printQueue_attributes);
   /* creation of i2c1Queue */
-  i2c1QueueHandle = osMessageQueueNew (8, sizeof(I2C_Request_t), &i2c1Queue_attributes);
+  i2c1QueueHandle = osMessageQueueNew (8, 4, &i2c1Queue_attributes);
   /* creation of i2c2Queue */
-  i2c2QueueHandle = osMessageQueueNew (8, sizeof(I2C_Request_t), &i2c2Queue_attributes);
+  i2c2QueueHandle = osMessageQueueNew (8, 4, &i2c2Queue_attributes);
   /* creation of i2c3Queue */
-  i2c3QueueHandle = osMessageQueueNew (8, sizeof(I2C_Request_t), &i2c3Queue_attributes);
+  i2c3QueueHandle = osMessageQueueNew (8, 4, &i2c3Queue_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */

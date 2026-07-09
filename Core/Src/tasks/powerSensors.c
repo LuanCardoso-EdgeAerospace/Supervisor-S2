@@ -13,24 +13,23 @@ PowerLogData_t powerLogData;
 INA230_LIST(INA230_DECLARE)
 #undef INA230_DECLARE
 
-extern I2C_HandleTypeDef hi2c2, hi2c3;
 
-void ina230write(I2C_HandleTypeDef *hi2c, uint16_t addr, uint8_t reg, uint16_t pData) {
+void ina230write(I2C_BusId_t bus, uint16_t addr, uint8_t reg, uint16_t pData) {
     addr <<= 1;
     uint8_t data[2] = {0};
     data[0] = pData >> 8;
     data[1] = pData & 0xff;
 
-    HAL_StatusTypeDef stat = I2C_Mem_Write(hi2c, addr, reg, I2C_MEMADD_SIZE_8BIT, data, 2, 1000);
+    HAL_StatusTypeDef stat = I2C_Mem_Write(bus, addr, reg, I2C_MEMADD_SIZE_8BIT, data, 2, 1000);
     if (stat != HAL_OK) {
         queuedPrintf("INA230 write failed: addr=0x%02X reg=0x%02X data=0x%04X stat=%d\r\n", addr, reg, pData, stat);
     }
 }
 
-uint16_t ina230read(I2C_HandleTypeDef *hi2c, uint16_t addr, uint8_t reg) {
+uint16_t ina230read(I2C_BusId_t bus, uint16_t addr, uint8_t reg) {
     addr <<= 1;
     uint8_t data[2] = {0};
-    HAL_StatusTypeDef stat = I2C_Mem_Read(hi2c, addr, reg, I2C_MEMADD_SIZE_8BIT, data, 2, 1000);
+    HAL_StatusTypeDef stat = I2C_Mem_Read(bus, addr, reg, I2C_MEMADD_SIZE_8BIT, data, 2, 1000);
     if (stat != HAL_OK) {
         queuedPrintf("INA230 read failed: addr=0x%02X reg=0x%02X stat=%d\r\n", addr, reg, stat);
 
@@ -50,7 +49,7 @@ uint16_t ina230read(I2C_HandleTypeDef *hi2c, uint16_t addr, uint8_t reg) {
                             bct,                                      \
                             avgm)                                     \
     do {                                                              \
-        name = INA230_init(&bus,                                      \
+        name = INA230_init(bus,                                      \
                            addr,                                      \
                            clsb,                                      \
                            shunt,                                     \
@@ -76,10 +75,19 @@ void setUpPowerSensors(void){
 	}
 }
 
+extern enum powerState powerStatus;
+
+
 //CMSIS RTOS task
 void logPower(void *argument){
     (void)argument;
 
+    //todo: Check if board is powered up before INA setups
+    for(;;){
+        if (powerStatus == POWER_ON) break;
+        osDelay(1000);
+    }
+    testINA();
     setUpPowerSensors();
 
 	uint32_t tick = osKernelGetTickCount();
@@ -157,11 +165,6 @@ void printPower(void *argument){
 
 
 void testINA(void){
-	//TODO: Deprecate this
-	HAL_GPIO_WritePin(EN_12V0P_GPIO_Port, EN_12V0P_Pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(LCL_1_EN_GPIO_Port, LCL_1_EN_Pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(PMIC_EN_GPIO_Port, PMIC_EN_Pin, GPIO_PIN_SET);
-
     //Call this function before the freeRTOS goes up and debug with watchpoits
     #define INA230_DECLARE(name, a, b, c, d, e, f, g) INA230_t name;
 
@@ -170,7 +173,7 @@ void testINA(void){
 	#undef INA230_DECLARE
 
 
-    #define INA230_SETUP_SENSOR(name,                                     \
+    #define INA230_SETUP_SENSOR(name,                                 \
                             addr,                                     \
                             shunt,                                    \
                             bus,                                      \
@@ -179,7 +182,7 @@ void testINA(void){
                             bct,                                      \
                             avgm)                                     \
     do {                                                              \
-        name = INA230_init(&bus,                                      \
+        name = INA230_init(bus,                                       \
                            addr,                                      \
                            clsb,                                      \
                            shunt,                                     \
@@ -195,9 +198,20 @@ void testINA(void){
 
 	#undef INA230_SETUP_SENSOR
 
+	extern I2C_HandleTypeDef hi2c3;
+
     volatile uint16_t id = INA230_getID(INA230_3V3_10A);
 
-    for(;;) continue;
+    uint8_t data[2] = {0xFF, 0xFF};
+    HAL_StatusTypeDef ret= HAL_I2C_Mem_Read(&hi2c3, INA230_3V3_10A.address << 1, INA230_REG_ID, I2C_MEMADD_SIZE_8BIT, data, 2, 1000);
+
+    uint32_t err = HAL_I2C_GetError(&hi2c3);
+
+    queuedPrintf("INA230T read ret=%d err=0x%08lx data=%02x %02x\r\n",
+                 ret, err, data[0], data[1]);
+
+
+//    for(;;) continue;
     
 }
 

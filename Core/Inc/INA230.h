@@ -9,9 +9,8 @@
 #define INC_INA230_H_
 
 #include <stdint.h>
-#include "stm32u0xx_hal.h" //For definition of the i2c handle. 
-                           //If porting to a different architecture,
-						   //replace it with the correct one (and the function in code as well).
+#include "i2c_manager.h"
+
 
 /******************************* Register Map  ********************************/
 #define INA230_REG_CONFIG        0x00  /*!< Configuration Register      - RW     */
@@ -187,20 +186,20 @@ typedef struct INA230{
 	uint16_t calibrationReg;
 	uint16_t current_LSB;
 	uint16_t shuntResistor;
-    void     (*i2c_write)(I2C_HandleTypeDef *, uint16_t, uint8_t, uint16_t); //addr, reg, pData
-    uint16_t (*i2c_read )(I2C_HandleTypeDef *, uint16_t, uint8_t); //addr, reg
-	I2C_HandleTypeDef *hi2c; // parent bus of the device.
+    void     (*i2c_write)(I2C_BusId_t, uint16_t, uint8_t, uint16_t); //addr, reg, pData
+    uint16_t (*i2c_read )(I2C_BusId_t, uint16_t, uint8_t); //addr, reg
+	I2C_BusId_t bus; // parent bus of the device.
 } INA230_t;
 
-INA230_t INA230_init(I2C_HandleTypeDef *hi2c,   /*!< Parent bus*/
+INA230_t INA230_init(I2C_BusId_t bus,   /*!< Parent bus*/
 					 uint16_t address, 			/*!< Address in the ic2 bus */
 					 uint16_t current_LSB, 		/*!< resolution of the current resistor in uA (usually 1000 uA) */
 					 uint16_t shuntResistor, 	/*!< shunt resistor value in milli Ohm */
 					 uint16_t shuntConvertTime, /*!< ADC sampling time for the shunt resistor (datasheet table idx)*/
 					 uint16_t busConvertTime,   /*!< ADC sampling time for the bus (datasheet table idx)*/
 					 uint16_t averagingMode,    /*!< Number of measurements averaged together (datasheet table idx)*/
-					 void    (*i2c_write)(I2C_HandleTypeDef *, uint16_t, uint8_t, uint16_t), //addr, reg, pData
-					 uint16_t (*i2c_read)(I2C_HandleTypeDef *, uint16_t, uint8_t) //addr, reg
+					 void    (*i2c_write)(I2C_BusId_t, uint16_t, uint8_t, uint16_t), //addr, reg, pData
+					 uint16_t (*i2c_read)(I2C_BusId_t, uint16_t, uint8_t) //addr, reg
 					);
 
 void         INA230_start(INA230_t target, unsigned opMode);

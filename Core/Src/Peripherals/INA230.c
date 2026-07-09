@@ -23,21 +23,21 @@
  * @param i2c_read 
  * @return INA230_t 
  */
-INA230_t INA230_init(I2C_HandleTypeDef *hi2c, /* parent bus */
+INA230_t INA230_init(I2C_BusId_t bus, /* parent bus */
                      uint16_t address, /* address in the ic2 bus*/
                      uint16_t current_LSB, /* milliamps per bit*/
                      uint16_t shuntResistor, /* milli Ohm */
                      uint16_t shuntConvertTime,
                      uint16_t busConvertTime,
                      uint16_t averagingMode,
-                     void (*i2c_write)(I2C_HandleTypeDef *, uint16_t, uint8_t, uint16_t), //addr, reg, pData
-                     uint16_t (*i2c_read )(I2C_HandleTypeDef *, uint16_t, uint8_t) //addr, reg
+                     void (*i2c_write)(I2C_BusId_t bus, uint16_t, uint8_t, uint16_t), //addr, reg, pData
+                     uint16_t (*i2c_read )(I2C_BusId_t bus, uint16_t, uint8_t) //addr, reg
                     ){
     uint32_t denominator = current_LSB*(shuntResistor);
     uint16_t calibration = (uint16_t)(5120/denominator); //using softeabi division should keep precision.
 
     INA230_t handle = {
-        .hi2c = hi2c,
+        .bus = bus,
         .address = address,
         .calibrationReg = calibration,
         .current_LSB = current_LSB,
@@ -55,10 +55,10 @@ INA230_t INA230_init(I2C_HandleTypeDef *hi2c, /* parent bus */
 //	cfg |= ( ( (uint16_t)busConvertTime   << INA230_REG_CFG_VBUSCT_Pos   ) & INA230_REG_CFG_VBUSCT_Msk   );
 //	cfg |= ( ( (uint16_t)averagingMode    << INA230_REG_CFG_AVG_Pos      ) & INA230_REG_CFG_AVG_Msk      );
 
-    i2c_write(hi2c, address, INA230_REG_CONFIG, cfg);
+    i2c_write(bus, address, INA230_REG_CONFIG, cfg);
 
     //write calibration
-    i2c_write(hi2c, address, INA230_REG_CALIBRATION, calibration);
+    i2c_write(bus, address, INA230_REG_CALIBRATION, calibration);
 
     return handle;
 }
@@ -70,10 +70,10 @@ INA230_t INA230_init(I2C_HandleTypeDef *hi2c, /* parent bus */
  * @param opMode INA230_MODE_* defines the operation mode.
  */
 void INA230_start(INA230_t target, unsigned opMode){
-    uint16_t config = target.i2c_read(target.hi2c, target.address, INA230_REG_CONFIG);
+    uint16_t config = target.i2c_read(target.bus, target.address, INA230_REG_CONFIG);
     config &= ~INA230_REG_CFG_MODE_Msk;
     config |= INA230_REG_CFG_MODE & opMode;
-    target.i2c_write(target.hi2c, target.address, INA230_REG_CONFIG, config);
+    target.i2c_write(target.bus, target.address, INA230_REG_CONFIG, config);
 }
 
 /**
@@ -82,10 +82,10 @@ void INA230_start(INA230_t target, unsigned opMode){
  * @param target 
  */
 void INA230_stop(INA230_t target){
-    uint16_t config = target.i2c_read(target.hi2c, target.address, INA230_REG_CONFIG);
+    uint16_t config = target.i2c_read(target.bus, target.address, INA230_REG_CONFIG);
     config &= ~INA230_REG_CFG_MODE_Msk;
     config |= INA230_MODE_POWER_DOWN;
-    target.i2c_write(target.hi2c, target.address, INA230_REG_CONFIG, config);
+    target.i2c_write(target.bus, target.address, INA230_REG_CONFIG, config);
 }
 
  /**
@@ -97,7 +97,7 @@ void INA230_stop(INA230_t target){
   * @return uint16_t 
   */
 uint16_t INA230_ConversionReady(INA230_t target){
-    uint16_t regMask = target.i2c_read(target.hi2c, target.address, INA230_REG_MASK_ENABLE);
+    uint16_t regMask = target.i2c_read(target.bus, target.address, INA230_REG_MASK_ENABLE);
     return ((regMask & INA230_REG_MASK_ENABLE_CVRF_Msk)>>INA230_REG_MASK_ENABLE_CVRF_Pos);
 }
 
@@ -108,7 +108,7 @@ uint16_t INA230_ConversionReady(INA230_t target){
   * @return int16_t 
   */
 int16_t INA230_getCurrent(INA230_t target){
-    return target.i2c_read(target.hi2c, target.address, INA230_REG_CURRENT) * target.current_LSB;
+    return target.i2c_read(target.bus, target.address, INA230_REG_CURRENT) * target.current_LSB;
 }
 
 /**
@@ -118,7 +118,7 @@ int16_t INA230_getCurrent(INA230_t target){
  * @return uint16_t 
  */
 uint16_t INA230_getPower(INA230_t target){
-    uint16_t power = target.i2c_read(target.hi2c, target.address, INA230_REG_PWR);
+    uint16_t power = target.i2c_read(target.bus, target.address, INA230_REG_PWR);
     //The Power register LSB is internally programmed to equal 25 times the programmed value of the Current_LSB
     //return (power*target.current_LSB*25);
     return (power*target.current_LSB*25); //already scaled
@@ -133,7 +133,7 @@ uint16_t INA230_getPower(INA230_t target){
  * @return int16_t 
  */
 int16_t INA230_getVoltageShunt(INA230_t target){
-    int16_t voltage = target.i2c_read(target.hi2c, target.address, INA230_REG_VSHUNT);
+    int16_t voltage = target.i2c_read(target.bus, target.address, INA230_REG_VSHUNT);
     //Internally the shunt is scaled to LSB=2.5 uV
     return voltage*2.5;
 
@@ -148,7 +148,7 @@ int16_t INA230_getVoltageShunt(INA230_t target){
   * @return uint16_t 
   */
 uint16_t INA230_getVoltageBus(INA230_t target){
-    int16_t voltage = target.i2c_read(target.hi2c, target.address, INA230_REG_VBUS);
+    int16_t voltage = target.i2c_read(target.bus, target.address, INA230_REG_VBUS);
     //converted = voltage*1.25f;
     //converted = voltage + (voltage / 4)
     return voltage*1.25f;
@@ -161,7 +161,7 @@ uint16_t INA230_getVoltageBus(INA230_t target){
  * @return uint16_t 
  */
 uint16_t INA230_getID(INA230_t target){
-    return target.i2c_read(target.hi2c, target.address, INA230_REG_ID);
+    return target.i2c_read(target.bus, target.address, INA230_REG_ID);
 }
 
 /**
@@ -185,7 +185,7 @@ void INA230_reset(INA230_t target){
  * @return uint16_t 
  */
 uint16_t INA230_getCalibration(INA230_t target){
-    return target.i2c_read(target.hi2c, target.address, INA230_REG_CALIBRATION);
+    return target.i2c_read(target.bus, target.address, INA230_REG_CALIBRATION);
 }
 
 /**
@@ -197,7 +197,7 @@ uint16_t INA230_getCalibration(INA230_t target){
  * @param calibration 
  */
 void INA230_setCalibration(INA230_t target, uint16_t calibration){
-    target.i2c_write(target.hi2c, target.address, INA230_REG_CALIBRATION, calibration);
+    target.i2c_write(target.bus, target.address, INA230_REG_CALIBRATION, calibration);
 }
 
 /**
@@ -207,7 +207,7 @@ void INA230_setCalibration(INA230_t target, uint16_t calibration){
  * @return uint16_t 
  */
 uint16_t INA230_getConfiguration(INA230_t target){
-    return target.i2c_read(target.hi2c, target.address, INA230_REG_CONFIG);
+    return target.i2c_read(target.bus, target.address, INA230_REG_CONFIG);
 }
 
 /**
@@ -217,7 +217,7 @@ uint16_t INA230_getConfiguration(INA230_t target){
  * @param cfg 
  */
 void INA230_setConfiguration(INA230_t target, uint16_t cfg){
-    target.i2c_write(target.hi2c, target.address, INA230_REG_CONFIG, cfg);
+    target.i2c_write(target.bus, target.address, INA230_REG_CONFIG, cfg);
 }
 
 /******************************************************************************/
@@ -231,11 +231,11 @@ void INA230_setConfiguration(INA230_t target, uint16_t cfg){
  * @param mode One of INA230_ALERTFUNC_*
  */
 void INA230_setAlertFunction(INA230_t target, uint16_t mode){
-    uint16_t regMaskEnable = target.i2c_read(target.hi2c, target.address, INA230_REG_MASK_ENABLE);
+    uint16_t regMaskEnable = target.i2c_read(target.bus, target.address, INA230_REG_MASK_ENABLE);
     //zero region
     regMaskEnable &=  ~INA230_REG_MASK_ENABLE_Func_Msk;
     regMaskEnable |= mode & INA230_REG_MASK_ENABLE_Func_Msk;
-    target.i2c_write(target.hi2c, target.address, INA230_REG_MASK_ENABLE, regMaskEnable);
+    target.i2c_write(target.bus, target.address, INA230_REG_MASK_ENABLE, regMaskEnable);
 }
 
 /**
@@ -247,7 +247,7 @@ void INA230_setAlertFunction(INA230_t target, uint16_t mode){
  * @return uint16_t 
  */
 uint16_t INA230_getAlertFunction(INA230_t target){
-    return target.i2c_read(target.hi2c, target.address, INA230_REG_MASK_ENABLE) & INA230_REG_MASK_ENABLE_Func_Msk;
+    return target.i2c_read(target.bus, target.address, INA230_REG_MASK_ENABLE) & INA230_REG_MASK_ENABLE_Func_Msk;
 }
 
  /**
@@ -264,7 +264,7 @@ uint16_t INA230_getAlertFunction(INA230_t target){
   * @return uint16_t 
   */
 uint16_t INA230_getAlertFunctionFlag(INA230_t target){
-    return target.i2c_read(target.hi2c, target.address, INA230_REG_MASK_ENABLE) & INA230_AFF;
+    return target.i2c_read(target.bus, target.address, INA230_REG_MASK_ENABLE) & INA230_AFF;
 }
 
 /**
@@ -273,7 +273,7 @@ uint16_t INA230_getAlertFunctionFlag(INA230_t target){
  * @param target 
  */
 uint16_t INA230_getMathOverflowFlag(INA230_t target){
-    return target.i2c_read(target.hi2c, target.address, INA230_REG_MASK_ENABLE) & INA230_OVRF;
+    return target.i2c_read(target.bus, target.address, INA230_REG_MASK_ENABLE) & INA230_OVRF;
 }
 
  /**
@@ -285,15 +285,15 @@ uint16_t INA230_getMathOverflowFlag(INA230_t target){
   * @param polarity 
   */
 void INA230_setAlertPolarity(INA230_t target, uint16_t polarity){
-    uint16_t regMaskEnable = target.i2c_read(target.hi2c, target.address, INA230_REG_MASK_ENABLE);
+    uint16_t regMaskEnable = target.i2c_read(target.bus, target.address, INA230_REG_MASK_ENABLE);
     //zero region
     regMaskEnable &=  ~INA230_REG_MASK_ENABLE_APOL_Msk;
     regMaskEnable |= polarity & INA230_REG_MASK_ENABLE_APOL_Msk;
-    target.i2c_write(target.hi2c, target.address, INA230_REG_MASK_ENABLE, regMaskEnable);
+    target.i2c_write(target.bus, target.address, INA230_REG_MASK_ENABLE, regMaskEnable);
 }
 
 uint16_t INA230_getAlertPolarity(INA230_t target){
-    return target.i2c_read(target.hi2c, target.address, INA230_REG_MASK_ENABLE) & INA230_REG_MASK_ENABLE_APOL_Msk;
+    return target.i2c_read(target.bus, target.address, INA230_REG_MASK_ENABLE) & INA230_REG_MASK_ENABLE_APOL_Msk;
 }
 
 /**
@@ -305,11 +305,11 @@ uint16_t INA230_getAlertPolarity(INA230_t target){
  *  remain active following a fault until the Mask/Enable register has been read.
  */
 void INA230_setAlertLatch(INA230_t target, uint16_t latch){
-    uint16_t regMaskEnable = target.i2c_read(target.hi2c, target.address, INA230_REG_MASK_ENABLE);
+    uint16_t regMaskEnable = target.i2c_read(target.bus, target.address, INA230_REG_MASK_ENABLE);
     //zero region
     regMaskEnable &=  ~INA230_REG_MASK_ENABLE_LEN_Msk;
     regMaskEnable |= latch & INA230_REG_MASK_ENABLE_LEN_Msk;
-    target.i2c_write(target.hi2c, target.address, INA230_REG_MASK_ENABLE, regMaskEnable);
+    target.i2c_write(target.bus, target.address, INA230_REG_MASK_ENABLE, regMaskEnable);
 }
 
 /**
@@ -319,7 +319,7 @@ void INA230_setAlertLatch(INA230_t target, uint16_t latch){
  * @return uint16_t 
  */
 uint16_t INA230_getAlertLatch(INA230_t target){
-    return target.i2c_read(target.hi2c, target.address, INA230_REG_MASK_ENABLE) & INA230_REG_MASK_ENABLE_LEN_Msk;
+    return target.i2c_read(target.bus, target.address, INA230_REG_MASK_ENABLE) & INA230_REG_MASK_ENABLE_LEN_Msk;
 }
 
 /**
@@ -340,14 +340,14 @@ void INA230_setAlertLimit(INA230_t target, uint16_t limit){
     switch (mode){
     case INA230_ALERTFUNC_SOL:
     case INA230_ALERTFUNC_SUL:
-        target.i2c_write(target.hi2c, target.address, INA230_REG_ALERT_LIMIT, (int16_t)(limit/2.5)); //value in microvolts
+        target.i2c_write(target.bus, target.address, INA230_REG_ALERT_LIMIT, (int16_t)(limit/2.5)); //value in microvolts
         break;
     case INA230_ALERTFUNC_BOL:
     case INA230_ALERTFUNC_BUL:
-        target.i2c_write(target.hi2c, target.address, INA230_REG_ALERT_LIMIT, (int16_t)(limit/1.25)); //value in millivolts
+        target.i2c_write(target.bus, target.address, INA230_REG_ALERT_LIMIT, (int16_t)(limit/1.25)); //value in millivolts
         break;
     case INA230_ALERTFUNC_POL:
-        target.i2c_write(target.hi2c, target.address, INA230_REG_ALERT_LIMIT, (limit*40)/target.current_LSB); //value milliwatts
+        target.i2c_write(target.bus, target.address, INA230_REG_ALERT_LIMIT, (limit*40)/target.current_LSB); //value milliwatts
         break;
     default:
         return;
@@ -367,7 +367,7 @@ void INA230_setAlertLimit(INA230_t target, uint16_t limit){
  */
 int16_t INA230_getAlertLimit(INA230_t target){
     uint16_t mode =  INA230_getAlertFunction(target);
-    int16_t limit = target.i2c_read(target.hi2c, target.address, INA230_REG_ALERT_LIMIT);;
+    int16_t limit = target.i2c_read(target.bus, target.address, INA230_REG_ALERT_LIMIT);;
 
     switch (mode){
     case INA230_ALERTFUNC_SOL:

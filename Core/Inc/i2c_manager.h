@@ -7,7 +7,7 @@
 #include <stdint.h>
 
 /* Maximum I2C payload size — tune to your largest transfer */
-#define I2C_MGR_MAX_DATA_LEN   64U
+#define I2C_MGR_MAX_DATA_LEN   4U
 
 /* I2C bus identifiers */
 typedef enum {

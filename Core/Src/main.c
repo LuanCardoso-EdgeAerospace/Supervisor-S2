@@ -134,6 +134,10 @@ int main(void)
   HAL_GPIO_WritePin(MCU_RS422_EN_GPIO_Port, MCU_RS422_EN_Pin, GPIO_PIN_RESET);
 
 
+  // Deactivate watchdog
+  // when removing remember to set pin again as pushpull
+  HAL_GPIO_WritePin(MCU_WATCHDOG_PULSE_GPIO_Port,
+                        MCU_WATCHDOG_PULSE_Pin, GPIO_PIN_SET);
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -493,8 +497,8 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : MCU_WATCHDOG_PULSE_Pin */
   GPIO_InitStruct.Pin = MCU_WATCHDOG_PULSE_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(MCU_WATCHDOG_PULSE_GPIO_Port, &GPIO_InitStruct);
 

@@ -49,7 +49,8 @@ static HAL_StatusTypeDef i2c_submit(I2C_BusId_t bus,
     }
 
     /* Post the op descriptor (by value — safe because caller is blocked) */
-    osStatus_t st = osMessageQueuePut(queue, op, 0U,
+    I2C_Request_t *queued_op = op;
+    osStatus_t st = osMessageQueuePut(queue, &queued_op, 0U,
                                       pdMS_TO_TICKS(timeout_ms));
     if (st != osOK) {
         osSemaphoreDelete(op->done_sem);
@@ -121,7 +122,7 @@ HAL_StatusTypeDef I2C_Mem_Read(I2C_BusId_t bus,
 /* ── Shared task body ───────────────────────────────────────────────────── */
 static void i2c_task_run(I2C_BusId_t bus)
 {
-    I2C_Request_t op;
+    I2C_Request_t *op = NULL;
 
     for (;;) {
         /* Block indefinitely waiting for an operation */
@@ -136,34 +137,52 @@ static void i2c_task_run(I2C_BusId_t bus)
         if (osMessageQueueGet(queue, &op, NULL, osWaitForever) != osOK) {
             continue;
         }
+
+        if (op == NULL) {
+            continue;
+        }
         HAL_StatusTypeDef  res;
 
-        if (op.op == I2C_OP_WRITE) {
+        if (op->op == I2C_OP_WRITE) {
             res = HAL_I2C_Mem_Write(hi2c,
-                                    op.dev_addr,
-                                    op.mem_addr,
-                                    op.mem_addr_size,
-                                    op.data,
-                                    op.size,
+                                    op->dev_addr, /*Shift needed by HAL*/
+                                    op->mem_addr,
+                                    op->mem_addr_size,
+                                    op->data,
+                                    op->size,
                                     HAL_MAX_DELAY);
         } else {
             res = HAL_I2C_Mem_Read(hi2c,
-                                   op.dev_addr,
-                                   op.mem_addr,
-                                   op.mem_addr_size,
-                                   op.data,
-                                   op.size,
+                                   op->dev_addr, /*Shift needed by HAL*/
+                                   op->mem_addr,
+                                   op->mem_addr_size,
+                                   op->data,
+                                   op->size,
                                    HAL_MAX_DELAY);
         }
 
-        op.result = res;
+        op->result = res;
 
         /* Signal the waiting caller */
-        osSemaphoreRelease(op.done_sem);
+        osSemaphoreRelease(op->done_sem);
     }
 }
 
 /* ── Task entry points (assign in CubeMX) ───────────────────────────────── */
-void I2C1_ManagerTask(void *argument) { (void)argument; i2c_task_run(I2C_BUS_1); }
-void I2C2_ManagerTask(void *argument) { (void)argument; i2c_task_run(I2C_BUS_2); }
-void I2C3_ManagerTask(void *argument) { (void)argument; i2c_task_run(I2C_BUS_3); }
+void I2C1_ManagerTask(void *argument) {
+	(void)argument;
+	i2c_task_run(I2C_BUS_1);
+}
+
+void I2C2_ManagerTask(void *argument) {
+	(void)argument;
+	i2c_task_run(I2C_BUS_2);
+}
+
+void I2C3_ManagerTask(void *argument) {
+	(void)argument;
+	i2c_task_run(I2C_BUS_3);
+}
+
+
+
