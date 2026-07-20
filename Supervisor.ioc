@@ -286,6 +286,7 @@ rtos.0.queues.3=allocationType,Dynamic;bufferName,NULL;controlBlockName,NULL;ite
 rtos.0.tasks.0=allocationType,Dynamic;bufferName,NULL;codeGen,Default;controlBlockName,NULL;entry,StartDefaultTask;name,defaultTask;parameter,NULL;priority,osPriorityNormal;stackSize,128
 rtos.0.tasks.1=allocationType,Dynamic;bufferName,NULL;codeGen,As weak;controlBlockName,NULL;entry,LEDBlink;name,LEDBlink;parameter,NULL;priority,osPriorityNormal;stackSize,128
 rtos.0.tasks.10=allocationType,Dynamic;bufferName,NULL;codeGen,As weak;controlBlockName,NULL;entry,printTherm;name,printTherm;parameter,NULL;priority,osPriorityNormal;stackSize,256
+rtos.0.tasks.11=allocationType,Dynamic;bufferName,NULL;codeGen,As weak;controlBlockName,NULL;entry,logTherm;name,logTherm;parameter,NULL;priority,osPriorityLow;stackSize,512
 rtos.0.tasks.2=allocationType,Dynamic;bufferName,NULL;codeGen,As weak;controlBlockName,NULL;entry,printer;name,printer;parameter,NULL;priority,osPriorityNormal;stackSize,256
 rtos.0.tasks.3=allocationType,Dynamic;bufferName,NULL;codeGen,As weak;controlBlockName,NULL;entry,powerUp;name,powerUp;parameter,NULL;priority,osPriorityNormal;stackSize,256
 rtos.0.tasks.4=allocationType,Dynamic;bufferName,NULL;codeGen,As weak;controlBlockName,NULL;entry,serviceWatchdog;name,serviceWatchdog;parameter,NULL;priority,osPriorityHigh;stackSize,256

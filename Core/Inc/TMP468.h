@@ -1,14 +1,15 @@
 /*
- * thermal.h
+ * TMP468.h
  *
  *  Created on: Jan 6, 2026
- *      Author: luan
+ *      Author: Luan
  */
 
 #ifndef INC_TMP468_HO_
 #define INC_TMP468_HO_
 
 #include<stdint.h>
+#include "i2c_manager.h"
 
 /******************************** Register map ********************************/
 
@@ -165,19 +166,32 @@ struct TMP468_remoteConfig{
 };
 #endif //TMP468_REMOTE_CONFIG_STRUCT
 
+//i2c callback types
+typedef void (*TMP468_I2C_WriteFn)(
+    I2C_BusId_t bus,
+    uint16_t address,
+    uint8_t reg,
+    uint16_t value);
+
+typedef uint16_t (*TMP468_I2C_ReadFn)(
+    I2C_BusId_t bus,
+    uint16_t address,
+    uint8_t reg);
+
 typedef struct TMP468_t{
+    I2C_BusId_t bus;
     uint16_t addr;
-    // uint16_t config;
+    
     uint16_t hysteresis;
     uint16_t localTHERMLimit1, localTHERMLimit2;
     #ifdef TMP468_REMOTE_CONFIG_STRUCT
-    struct TMP468_remoteConfig remote[8];
+        struct TMP468_remoteConfig remote[8];
     #endif //TMP468_REMOTE_CONFIG_STRUCT
-    uint8_t enabledChannels; //TODO: Passed during init, expected remote sensors
-    uint8_t detectedChannels; //TODO: Checked during init, detected remote sensors
-    uint8_t enabled; //TODO: Boolean, set to zero if declared but not used. Externally managed
-    void (*i2c_write)(uint16_t, uint8_t, uint16_t); //addr, reg, pData
-    uint16_t (*i2c_read )(uint16_t, uint8_t); //addr, reg
+    uint8_t enabledChannels;  //store >>8 to avoid using a 16bit type
+    uint8_t detectedChannels; //store >>8 to avoid using a 16bit type
+    uint8_t enabled; 
+    TMP468_I2C_WriteFn i2c_write;
+    TMP468_I2C_ReadFn  i2c_read; //addr, reg
 } TMP468_t;
 
 // Python reference, table12 of the datasheet (revB)
@@ -186,30 +200,32 @@ typedef struct TMP468_t{
 #define TMP468_etatoi(eta) ((int)((((1.008f * 2088.0f) / (eta)) - 2088.0f) + 0.5f))
 #define TMP468_itoeta(i)   ((1.008f * 2088.0f) / (2088.0f + (float)(i)))
 
-int32_t     TMP468_getRemoteTemperature(TMP468_t target, int idx);
-int16_t     TMP468_getRemoteTemperatureRAW(TMP468_t target, int idx);
-uint16_t    TMP468_getTHERM1Status(TMP468_t target);
-uint16_t    TMP468_getTHERM2Status(TMP468_t target);
-uint16_t    TMP468_getOpenStatus(TMP468_t target);
-int         TMP468_isbusy(TMP468_t target);
-TMP468_t    TMP468_init(uint16_t addr, uint16_t conversionRate, uint16_t hysteresis, uint32_t THERM1, uint32_t THERM2, uint8_t enabledChannels,
-                        void (*i2c_write)(uint16_t, uint8_t, uint16_t), 
-                        uint16_t (*i2c_read )(uint16_t, uint8_t) );
-void        TMP468_setRemoteEnabled(TMP468_t target, uint16_t flags);
-uint16_t    TMP468_getRemoteEnabled(TMP468_t target);
-void        TMP468_enableLocal(TMP468_t target);
-void        TMP468_disableLocal(TMP468_t target);
-uint16_t    TMP468_getHysteresis(TMP468_t target);
-void        TMP468_setHysteresis(TMP468_t target, uint16_t hysteresis);
-int16_t     TMP468_getThermlimit(TMP468_t target, int idx, int thermSelect);
-void        TMP468_setThermLimit(TMP468_t target, int idx, int16_t thermlimit, int thermSelect);
-void        TMP468_disableTherm(TMP468_t target, int idx, int thermSelect);
-void        TMP468_configRemote(TMP468_t *target, int idx, uint32_t offset, int8_t eta, uint32_t THERM1, uint32_t THERM2);
-void        TMP468_wakeup(TMP468_t target);
-void        TMP468_sleep(TMP468_t target);
-void        TMP468_lock(TMP468_t target);
-void        TMP468_unlock(TMP468_t target);
-uint16_t    TMP468_getLock(TMP468_t target);
+TMP468_t    TMP468_init(I2C_BusId_t bus, uint16_t addr, uint16_t conversionRate, uint16_t hysteresis, uint32_t THERM1,
+                     uint32_t THERM2, uint8_t enabledChannels, 
+                     TMP468_I2C_WriteFn i2c_write,
+                     TMP468_I2C_ReadFn i2c_read);
+
+int32_t     TMP468_getRemoteTemperature(TMP468_t *target, int idx);
+int16_t     TMP468_getRemoteTemperatureRAW(TMP468_t *target, int idx);
+uint16_t    TMP468_getTHERM1Status(TMP468_t *target);
+uint16_t    TMP468_getTHERM2Status(TMP468_t *target);
+uint16_t    TMP468_getOpenStatus(TMP468_t *target);
+int         TMP468_isbusy(TMP468_t *target);
+void        TMP468_setRemoteEnabled(TMP468_t *target, uint16_t flags);
+uint16_t    TMP468_getRemoteEnabled(TMP468_t *target);
+void        TMP468_enableLocal(TMP468_t *target);
+void        TMP468_disableLocal(TMP468_t *target);
+uint16_t    TMP468_getHysteresis(TMP468_t *target);
+void        TMP468_setHysteresis(TMP468_t *target, uint16_t hysteresis);
+int16_t     TMP468_getThermlimit(TMP468_t *target, int idx, int thermSelect);
+void        TMP468_setThermLimit(TMP468_t *target, int idx, int16_t thermlimit, int thermSelect);
+void        TMP468_disableTherm(TMP468_t *target, int idx, int thermSelect);
+void        TMP468_configRemote(TMP468_t *target, int idx, int32_t offset, int8_t eta, uint32_t THERM1, uint32_t THERM2);
+void        TMP468_wakeup(TMP468_t *target);
+void        TMP468_sleep(TMP468_t *target);
+void        TMP468_lock(TMP468_t *target);
+void        TMP468_unlock(TMP468_t *target);
+uint16_t    TMP468_getLock(TMP468_t *target);
 
 
 #endif /* INC_TMP468_HO_ */

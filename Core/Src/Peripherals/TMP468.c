@@ -1,9 +1,8 @@
 /*
- * thermal.h
- *
- *	Functions to interface with the TMP468
+ *  TMP468.h
+ * 
  *  Created on: Jan 6, 2026
- *      Author: luan
+ *      Author: Luan
  */
 
 
@@ -67,9 +66,9 @@ int thermLimitRegtoHalfDegrees(uint16_t thermlimit){
  * @param idx Remote sensor channel. Zero if using local sensor
  * @return uint32_t 
  */
-int32_t TMP468_getRemoteTemperature(TMP468_t target, int idx){
+int32_t TMP468_getRemoteTemperature(TMP468_t *target, int idx){
     if (idx<0 || idx>8) return -1;
-    return regToMillis(target.i2c_read(target.addr, TMP468_REG_LOCAL_TMP + idx)); 
+    return regToMillis(target->i2c_read(target->bus, target->addr, TMP468_REG_LOCAL_TMP + idx)); 
     //This is only possible since the registers for the remote register are in adjacent address.
 }
 
@@ -80,9 +79,9 @@ int32_t TMP468_getRemoteTemperature(TMP468_t target, int idx){
  * @param idx Remote sensor channel. Zero if using local sensor
  * @return uint32_t 
  */
-int16_t TMP468_getRemoteTemperatureRAW(TMP468_t target, int idx){
+int16_t TMP468_getRemoteTemperatureRAW(TMP468_t *target, int idx){
     if (idx<0 || idx>8) return -1;
-    return target.i2c_read(target.addr, TMP468_REG_LOCAL_TMP + idx); 
+    return target->i2c_read(target->bus, target->addr, TMP468_REG_LOCAL_TMP + idx); 
     //This is only possible since the registers for the remote register are in adjacent address.
 }
 
@@ -100,8 +99,8 @@ int16_t TMP468_getRemoteTemperatureRAW(TMP468_t target, int idx){
  * @param target 
  * @return uint16_t 
  */
-uint16_t TMP468_getTHERM1Status(TMP468_t target){
-        return target.i2c_read(target.addr, TMP468_REG_THERM1_STATUS); 
+uint16_t TMP468_getTHERM1Status(TMP468_t *target){
+        return target->i2c_read(target->bus, target->addr, TMP468_REG_THERM1_STATUS); 
 }
 
 
@@ -118,8 +117,8 @@ uint16_t TMP468_getTHERM1Status(TMP468_t target){
  * @param target 
  * @return uint16_t 
  */
-uint16_t TMP468_getTHERM2Status(TMP468_t target){
-    return target.i2c_read(target.addr, TMP468_REG_THERM2_STATUS); 
+uint16_t TMP468_getTHERM2Status(TMP468_t *target){
+    return target->i2c_read(target->bus, target->addr, TMP468_REG_THERM2_STATUS); 
 }
 
 /**
@@ -132,9 +131,9 @@ uint16_t TMP468_getTHERM2Status(TMP468_t target){
  * @param target 
  * @return uint16_t 0 if all circuits are closed, mask otherwise.
  */
-uint16_t TMP468_getOpenStatus(TMP468_t target){
-    uint16_t e = target.i2c_read(target.addr, TMP468_REG_REMOTE_CHANNEL_OPEN_STATUS); 
-    target.detectedChannels=e>>8;
+uint16_t TMP468_getOpenStatus(TMP468_t *target){
+    uint16_t e = target->i2c_read(target->bus, target->addr, TMP468_REG_REMOTE_CHANNEL_OPEN_STATUS); 
+    target->detectedChannels=e>>8;
     return e;
 }
 
@@ -144,8 +143,8 @@ uint16_t TMP468_getOpenStatus(TMP468_t target){
  * @param target 
  * @return bool
  */
-int TMP468_isbusy(TMP468_t target){
-    return target.i2c_read(target.addr, TMP468_REG_CONFIGURATION) & TMP468_CONFIG_BUSY;
+int TMP468_isbusy(TMP468_t *target){
+    return target->i2c_read(target->bus, target->addr, TMP468_REG_CONFIGURATION) & TMP468_CONFIG_BUSY;
 }
 
 /******************************* Configuration ********************************/
@@ -160,10 +159,12 @@ int TMP468_isbusy(TMP468_t target){
  * @param THERM2 Thermal alarm, in 0.5 degrees resolution
  * @return TMP468_t 
  */
-TMP468_t TMP468_init(uint16_t addr, uint16_t conversionRate, uint16_t hysteresis, uint32_t THERM1, uint32_t THERM2, uint8_t enabledChannels,
-                     void (*i2c_write)(uint16_t, uint8_t, uint16_t), 
-                     uint16_t (*i2c_read )(uint16_t, uint8_t) ){
+TMP468_t TMP468_init(I2C_BusId_t bus, uint16_t addr, uint16_t conversionRate, uint16_t hysteresis, uint32_t THERM1,
+                     uint32_t THERM2, uint8_t enabledChannels, 
+                     TMP468_I2C_WriteFn i2c_write,
+                     TMP468_I2C_ReadFn i2c_read) {
     TMP468_t target = {
+        .bus = bus,
         .addr = addr,
         .hysteresis = hysteresis,
         .localTHERMLimit1 = THERM1,
@@ -175,14 +176,14 @@ TMP468_t TMP468_init(uint16_t addr, uint16_t conversionRate, uint16_t hysteresis
         .i2c_read = i2c_read
     };
 
-    uint16_t cfg = target.i2c_read(addr, TMP468_REG_CONFIGURATION);	
+    uint16_t cfg = target.i2c_read(target.bus, addr, TMP468_REG_CONFIGURATION);	
     cfg &= ~TMP468_CONFIG_CONVERSION_RATE_mask; //clears bits
     cfg |= conversionRate; //set bits to conversion rate
-    target.i2c_write(addr, TMP468_REG_CONFIGURATION, cfg);
+    target.i2c_write(target.bus, addr, TMP468_REG_CONFIGURATION, cfg);
 
-    target.i2c_write(target.addr, TMP468_REG_THERM_HYSTERESIS, hysteresis); 
-    target.i2c_write(target.addr, TMP468_REG_LOCAL_THERM2_LIMIT, halfDegreesToThermLimitreg(THERM1));
-    target.i2c_write(target.addr, TMP468_REG_LOCAL_THERM1_LIMIT, halfDegreesToThermLimitreg(THERM2));
+    target.i2c_write(target.bus, target.addr, TMP468_REG_THERM_HYSTERESIS, hysteresis); 
+    target.i2c_write(target.bus, target.addr, TMP468_REG_LOCAL_THERM1_LIMIT, halfDegreesToThermLimitreg(THERM1));
+    target.i2c_write(target.bus, target.addr, TMP468_REG_LOCAL_THERM2_LIMIT, halfDegreesToThermLimitreg(THERM2));
 
     return target;
 }
@@ -193,12 +194,12 @@ TMP468_t TMP468_init(uint16_t addr, uint16_t conversionRate, uint16_t hysteresis
  * @param target 
  * @param flags Multiple sensors can be comined using bitwise OR
  */
-void TMP468_setRemoteEnabled(TMP468_t target, uint16_t flags){
-    uint16_t cfg = target.i2c_read(target.addr, TMP468_REG_CONFIGURATION);
+void TMP468_setRemoteEnabled(TMP468_t *target, uint16_t flags){
+    uint16_t cfg = target->i2c_read(target->bus, target->addr, TMP468_REG_CONFIGURATION);
     //clears bits
     cfg &= ~TMP468_REMOTE_bitmask;
     cfg |= flags & TMP468_REMOTE_bitmask;
-    target.i2c_write(target.addr, TMP468_REG_CONFIGURATION, cfg);
+    target->i2c_write(target->bus, target->addr, TMP468_REG_CONFIGURATION, cfg);
 }
 
 /**
@@ -207,8 +208,8 @@ void TMP468_setRemoteEnabled(TMP468_t target, uint16_t flags){
  * @param target 
  * @return uint16_t 
  */
-uint16_t TMP468_getRemoteEnabled(TMP468_t target){
-    uint16_t cfg = target.i2c_read(target.addr, TMP468_REG_CONFIGURATION);
+uint16_t TMP468_getRemoteEnabled(TMP468_t *target){
+    uint16_t cfg = target->i2c_read(target->bus, target->addr, TMP468_REG_CONFIGURATION);
     cfg &= TMP468_REMOTE_bitmask;
     return cfg;
 }
@@ -218,10 +219,10 @@ uint16_t TMP468_getRemoteEnabled(TMP468_t target){
  * 
  * @param target 
  */
-void TMP468_enableLocal(TMP468_t target){
-    uint16_t cfg = target.i2c_read(target.addr, TMP468_REG_CONFIGURATION);
+void TMP468_enableLocal(TMP468_t *target){
+    uint16_t cfg = target->i2c_read(target->bus, target->addr, TMP468_REG_CONFIGURATION);
     cfg |= TMP468_LOCAL_MASK; //sets bit to 1
-    target.i2c_write(target.addr, TMP468_REG_CONFIGURATION, cfg);
+    target->i2c_write(target->bus, target->addr, TMP468_REG_CONFIGURATION, cfg);
 }
 
 /**
@@ -229,10 +230,10 @@ void TMP468_enableLocal(TMP468_t target){
  * 
  * @param target 
  */
-void TMP468_disableLocal(TMP468_t target){
-    uint16_t cfg = target.i2c_read(target.addr, TMP468_REG_CONFIGURATION);	
+void TMP468_disableLocal(TMP468_t *target){
+    uint16_t cfg = target->i2c_read(target->bus, target->addr, TMP468_REG_CONFIGURATION);	
     cfg &= ~TMP468_LOCAL_MASK; //sets bit to 1
-    target.i2c_write(target.addr, TMP468_REG_CONFIGURATION, cfg);
+    target->i2c_write(target->bus, target->addr, TMP468_REG_CONFIGURATION, cfg);
 }
 
 
@@ -242,8 +243,8 @@ void TMP468_disableLocal(TMP468_t target){
  * @param target 
  * @return int16_t 
  */
-uint16_t TMP468_getHysteresis(TMP468_t target){
-    return target.i2c_read(target.addr, TMP468_REG_THERM_HYSTERESIS) >> TMP468_HYSTERESIS_pos;
+uint16_t TMP468_getHysteresis(TMP468_t *target){
+    return target->i2c_read(target->bus, target->addr, TMP468_REG_THERM_HYSTERESIS) >> TMP468_HYSTERESIS_pos;
 }
 
 /**
@@ -252,8 +253,8 @@ uint16_t TMP468_getHysteresis(TMP468_t target){
  * @param target 
  * @param hysteresis Hysteresis temperature in degrees
  */
-void TMP468_setHysteresis(TMP468_t target, uint16_t hysteresis){
-    target.i2c_write(target.addr, TMP468_REG_THERM_HYSTERESIS, hysteresis << TMP468_HYSTERESIS_pos);
+void TMP468_setHysteresis(TMP468_t *target, uint16_t hysteresis){
+    target->i2c_write(target->bus, target->addr, TMP468_REG_THERM_HYSTERESIS, hysteresis << TMP468_HYSTERESIS_pos);
 }
 
 /** internal function, allows one to refer to the internal register as idx0 */
@@ -282,13 +283,13 @@ int16_t thermRegisterOffset(int idx, int thermSelect){
  * @param thermSelect TMP468_SELECT_THERM1 or TMP468_SELECT_THERM2
  * @return int16_t 
  */
-int16_t TMP468_getThermlimit(TMP468_t target, int idx, int thermSelect){
+int16_t TMP468_getThermlimit(TMP468_t *target, int idx, int thermSelect){
     int16_t reg = thermRegisterOffset(idx, thermSelect);
     if (reg == -1){ 
         return -1;
     }
     else{
-        return target.i2c_read(target.addr, reg);
+        return target->i2c_read(target->bus, target->addr, reg);
     }
 }
 
@@ -300,10 +301,10 @@ int16_t TMP468_getThermlimit(TMP468_t target, int idx, int thermSelect){
  * @param thermlimit 
  * @param thermSelect TMP468_SELECT_THERM1 or TMP468_SELECT_THERM2
  */
-void TMP468_setThermLimit(TMP468_t target, int idx, int16_t thermlimit, int thermSelect){
+void TMP468_setThermLimit(TMP468_t *target, int idx, int16_t thermlimit, int thermSelect){
     int16_t reg = thermRegisterOffset(idx, thermSelect);
     if (reg == -1) return;
-    target.i2c_write(target.addr, reg, thermlimit);
+    target->i2c_write(target->bus, target->addr, reg, thermlimit);
 }
 
 /**
@@ -313,7 +314,7 @@ void TMP468_setThermLimit(TMP468_t target, int idx, int16_t thermlimit, int ther
  * @param idx Measurement channel, with 0 being the local channel.
  * @param thermSelect TMP468_SELECT_THERM1 or TMP468_SELECT_THERM2
  */
-void TMP468_disableTherm(TMP468_t target, int idx, int thermSelect){
+void TMP468_disableTherm(TMP468_t *target, int idx, int thermSelect){
     TMP468_setThermLimit(target, idx, TMP468_THERM_DISABLE, thermSelect);
 }
 
@@ -327,7 +328,7 @@ void TMP468_disableTherm(TMP468_t target, int idx, int thermSelect){
  * @param THERM1 Temperature alarm 1, in mili degrees
  * @param THERM2 Temperature alarm 2, in mili degrees
  */
-void TMP468_configRemote(TMP468_t *target, int idx, uint32_t offset, int8_t eta, uint32_t THERM1, uint32_t THERM2){
+void TMP468_configRemote(TMP468_t *target, int idx, int32_t offset, int8_t eta, uint32_t THERM1, uint32_t THERM2){
     //base address
     unsigned baseRegister = TMP468_REG_REMOTE_CONFIG_BASE_ADDR + (TMP468_REG_REMOTE_CONFIG_REMOTE_REMOTE_OFFSET * idx);
     unsigned offsetRegister = baseRegister + TMP468_REG_REMOTE_CONFIG_REMOTE_OFFSET_OFFSET;
@@ -335,15 +336,19 @@ void TMP468_configRemote(TMP468_t *target, int idx, uint32_t offset, int8_t eta,
     unsigned THERM1Register = baseRegister + TMP468_REG_REMOTE_CONFIG_REMOTE_THERM1_OFFSET;
     unsigned THERM2Register = baseRegister + TMP468_REG_REMOTE_CONFIG_REMOTE_THERM2_OFFSET;
 
-    target->i2c_write(target->addr, offsetRegister, millisToReg(offset));
-    target->i2c_write(target->addr, etaResister, eta << TMP468_REG_REMOTE_IDEALITY_CORRECTION_pos);
-    target->i2c_write(target->addr, THERM1Register, halfDegreesToThermLimitreg(THERM1/2000));
-    target->i2c_write(target->addr, THERM2Register, halfDegreesToThermLimitreg(THERM2/2000));
+    if ((target == NULL) || (idx < 1) || (idx > 8)) {
+        return;
+    }
+
+    target->i2c_write(target->bus, target->addr, offsetRegister, millisToReg(offset));
+    target->i2c_write(target->bus, target->addr, etaResister, eta << TMP468_REG_REMOTE_IDEALITY_CORRECTION_pos);
+    target->i2c_write(target->bus, target->addr, THERM1Register, halfDegreesToThermLimitreg(THERM1/2000));
+    target->i2c_write(target->bus, target->addr, THERM2Register, halfDegreesToThermLimitreg(THERM2/2000));
 
     //set the configured remote as enabled
-    uint16_t enabled = TMP468_getRemoteEnabled(*target);
-    enabled |= TMP468_CONFIG_ENABLE_REMOTE_BASE << idx;
-    TMP468_setRemoteEnabled(*target, enabled);
+    uint16_t enabled = TMP468_getRemoteEnabled(target);
+    enabled |= TMP468_CONFIG_ENABLE_REMOTE_BASE << (idx-1);
+    TMP468_setRemoteEnabled(target, enabled);
     
     #ifdef TMP468_REMOTE_CONFIG_STRUCT
     target->remote[idx-1].offset = offset;
@@ -358,10 +363,10 @@ void TMP468_configRemote(TMP468_t *target, int idx, uint32_t offset, int8_t eta,
  * 
  * @param target 
  */
-void TMP468_sleep(TMP468_t target){
-    uint16_t cfg = target.i2c_read(target.addr, TMP468_REG_CONFIGURATION);
+void TMP468_sleep(TMP468_t *target){
+    uint16_t cfg = target->i2c_read(target->bus, target->addr, TMP468_REG_CONFIGURATION);
     cfg |= TMP468_CONFIG_SHUTDOWN_mask; // 1 = enables device shutdown
-    target.i2c_write(target.addr, TMP468_REG_CONFIGURATION, cfg);
+    target->i2c_write(target->bus, target->addr, TMP468_REG_CONFIGURATION, cfg);
 }
 
 
@@ -370,10 +375,10 @@ void TMP468_sleep(TMP468_t target){
  * 
  * @param target 
  */
-void TMP468_wakeup(TMP468_t target){
-    uint16_t cfg = target.i2c_read(target.addr, TMP468_REG_CONFIGURATION);
+void TMP468_wakeup(TMP468_t *target){
+    uint16_t cfg = target->i2c_read(target->bus, target->addr, TMP468_REG_CONFIGURATION);
     cfg &= ~TMP468_CONFIG_SHUTDOWN_mask; //clear bit
-    target.i2c_write(target.addr, TMP468_REG_CONFIGURATION, cfg);
+    target->i2c_write(target->bus, target->addr, TMP468_REG_CONFIGURATION, cfg);
 }
 
 /******************************** Lock control ********************************/
@@ -383,8 +388,8 @@ void TMP468_wakeup(TMP468_t target){
  * 
  * @param target 
  */
-void TMP468_lock(TMP468_t target){
-    target.i2c_write(target.addr, TMP468_REG_LOCK, TMP468_DO_LOCK);
+void TMP468_lock(TMP468_t *target){
+    target->i2c_write(target->bus, target->addr, TMP468_REG_LOCK, TMP468_DO_LOCK);
 }
 
 /**
@@ -392,8 +397,8 @@ void TMP468_lock(TMP468_t target){
  * 
  * @param target 
  */
-void TMP468_unlock(TMP468_t target){
-    target.i2c_write(target.addr, TMP468_REG_LOCK, TMP468_DO_UNLOCK);
+void TMP468_unlock(TMP468_t *target){
+    target->i2c_write(target->bus, target->addr, TMP468_REG_LOCK, TMP468_DO_UNLOCK);
 }
 
 /**
@@ -402,6 +407,7 @@ void TMP468_unlock(TMP468_t target){
  * @param target 
  * @return uint16_t 
  */
-uint16_t TMP468_getLock(TMP468_t target){
-    return target.i2c_read(target.addr, TMP468_REG_LOCK);
+uint16_t TMP468_getLock(TMP468_t *target){
+    return target->i2c_read(target->bus, target->addr, TMP468_REG_LOCK);
 }
+

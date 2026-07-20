@@ -13,20 +13,50 @@ thermLogData_t thermLogData;
 TMP468_LIST(TMP468_DECLARE)
 #undef TMP468_DECLARE
 
+void tmp468write(I2C_BusId_t bus, uint16_t addr, uint8_t reg, uint16_t pData) {
+    addr <<= 1;
+    uint8_t data[2] = {0};
+    data[0] = pData >> 8;
+    data[1] = pData & 0xff;
+
+    HAL_StatusTypeDef stat = I2C_Mem_Write(bus, addr, reg, I2C_MEMADD_SIZE_8BIT, data, 2, 1000);
+    if (stat != HAL_OK) {
+        queuedPrintf("TMP468 write failed: addr=0x%02X reg=0x%02X data=0x%04X stat=%d\r\n", addr, reg, pData, stat);
+    }
+}
+
+uint16_t tmp468read(I2C_BusId_t bus, uint16_t addr, uint8_t reg) {
+    addr <<= 1;
+    uint8_t data[2] = {0};
+    HAL_StatusTypeDef stat = I2C_Mem_Read(bus, addr, reg, I2C_MEMADD_SIZE_8BIT, data, 2, 1000);
+    if (stat != HAL_OK) {
+        queuedPrintf("TMP468 read failed: addr=0x%02X reg=0x%02X stat=%d\r\n", addr, reg, stat);
+
+        return 0;
+    }
+
+    uint16_t res = (data[0] << 8) | (data[1]);
+    return res;
+}
+
 
 static int sensorsSet=0;
 setUpThermSensors(){
-   //Init sensors
+	//Init sensors
 
-   //check if TMP468_getOpenStatus() matches expectedChannelMask
+	//check if TMP468_getOpenStatus() matches expectedChannelMask
 
-   //configure each of the remote channels using TMP468_configRemote
-   sensorsSet=1;
+	//configure each of the remote channels using TMP468_configRemote
+
+	// At the end, set global variable.
+	//   sensorsSet=1;
 }
 
+
 // CMSIS RTOS task
-void logTherm_(void *argument) {
+void logTherm(void *argument) {
     setUpThermSensors();
+    testTherm();
 
     uint32_t tick = osKernelGetTickCount();
     for (;;) {
@@ -59,7 +89,7 @@ void logTherm_(void *argument) {
 #define TMP468_RAW_TO_MILLIC(raw_) \
     (((int32_t)(raw_) * 1000) / 16)
 
-void printTherm_(void *argument) {
+void printTherm(void *argument) {
     // Send to terminal the current temperature
     int printDelay = 5000;
     thermLogData_t log = {0};
@@ -111,3 +141,16 @@ void printTherm_(void *argument) {
         osDelay(printDelay);
     }
 }
+
+void testTherm(){
+	//init a sensor and test the features.
+	queuedPrintf("TMP468p test\r\n");
+
+	if (!sensorsSet){
+		queuedPrintf("TMP468p Sensor not initialized");
+	}
+	return;
+}
+
+
+

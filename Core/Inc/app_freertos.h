@@ -65,6 +65,7 @@ extern osThreadId_t I2C1_ManagerHandle;
 extern osThreadId_t I2C2_ManagerHandle;
 extern osThreadId_t I2C3_ManagerHandle;
 extern osThreadId_t printThermHandle;
+extern osThreadId_t logThermHandle;
 extern osMutexId_t powerLogMutexHandle;
 extern osMutexId_t thermLogMutexHandle;
 extern osMessageQueueId_t printQueueHandle;
@@ -88,6 +89,7 @@ extern void I2C1_ManagerTask(void *argument);
 extern void I2C2_ManagerTask(void *argument);
 extern void I2C3_ManagerTask(void *argument);
 void printTherm(void *argument);
+void logTherm(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 

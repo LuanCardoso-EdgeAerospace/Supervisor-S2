@@ -121,6 +121,13 @@ const osThreadAttr_t printTherm_attributes = {
   .priority = (osPriority_t) osPriorityNormal,
   .stack_size = 256 * 4
 };
+/* Definitions for logTherm */
+osThreadId_t logThermHandle;
+const osThreadAttr_t logTherm_attributes = {
+  .name = "logTherm",
+  .priority = (osPriority_t) osPriorityLow,
+  .stack_size = 512 * 4
+};
 /* Definitions for powerLogMutex */
 osMutexId_t powerLogMutexHandle;
 const osMutexAttr_t powerLogMutex_attributes = {
@@ -240,6 +247,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of printTherm */
   printThermHandle = osThreadNew(printTherm, NULL, &printTherm_attributes);
+
+  /* creation of logTherm */
+  logThermHandle = osThreadNew(logTherm, NULL, &logTherm_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -374,6 +384,24 @@ __weak void printTherm(void *argument)
     osDelay(1);
   }
   /* USER CODE END printTherm */
+}
+
+/* USER CODE BEGIN Header_logTherm */
+/**
+* @brief Function implementing the logTherm thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_logTherm */
+__weak void logTherm(void *argument)
+{
+  /* USER CODE BEGIN logTherm */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END logTherm */
 }
 
 /* Private application code --------------------------------------------------*/

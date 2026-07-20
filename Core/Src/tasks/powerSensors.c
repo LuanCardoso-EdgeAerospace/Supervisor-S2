@@ -87,7 +87,7 @@ void logPower(void *argument){
         if (powerStatus == POWER_ON) break;
         osDelay(1000);
     }
-    testINA();
+//    testINA();
     setUpPowerSensors();
 
 	uint32_t tick = osKernelGetTickCount();
