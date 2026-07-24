@@ -13,6 +13,7 @@ PowerLogData_t powerLogData;
 INA230_LIST(INA230_DECLARE)
 #undef INA230_DECLARE
 
+#define DEACTIVATE
 
 void ina230write(I2C_BusId_t bus, uint16_t addr, uint8_t reg, uint16_t pData) {
     addr <<= 1;
@@ -79,6 +80,22 @@ extern enum powerState powerStatus;
 
 
 //CMSIS RTOS task
+
+#ifdef DEACTIVATE
+void logPower(void *argument){
+    (void)argument;
+    for(;;){
+        osDelay(0xFFFFFFFF);
+    }
+}
+void printPower(void *argument){
+    (void)argument;
+    for(;;){
+        osDelay(0xFFFFFFFF);
+    }
+}
+#else
+
 void logPower(void *argument){
     (void)argument;
 
@@ -216,3 +233,4 @@ void testINA(void){
 }
 
 
+#endif

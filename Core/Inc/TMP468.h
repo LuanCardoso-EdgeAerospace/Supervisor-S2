@@ -144,6 +144,9 @@
 #define TMP468_REG_MANID 0xFE  /* Manufacturer identification 0x5449 */
 #define TMP468_REG_DEVID 0xFF  /* Device identification 0x0468 */
 
+#define TMP468_MANID 0x5449  /* Manufacturer id expected val */
+#define TMP468_DEVID 0x0468  /* Device id expected val */
+
 /****************************** Resolution info *******************************/
 #define TMP468_HYSTERESIS_RESOLUTION 1        /*!< one degree per bit*/
 #define TMP468_THERM_RESOLUTION      0.5f     /*!< 0.5 degrees per bit*/

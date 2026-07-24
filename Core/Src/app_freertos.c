@@ -204,7 +204,7 @@ void MX_FREERTOS_Init(void) {
   /* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
   /* creation of printQueue */
-  printQueueHandle = osMessageQueueNew (16, 128, &printQueue_attributes);
+  printQueueHandle = osMessageQueueNew (32, 128, &printQueue_attributes);
   /* creation of i2c1Queue */
   i2c1QueueHandle = osMessageQueueNew (8, 4, &i2c1Queue_attributes);
   /* creation of i2c2Queue */
